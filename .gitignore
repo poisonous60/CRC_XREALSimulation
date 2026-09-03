@@ -40,3 +40,6 @@ UnityDebugUpload/
 
 # Unity temporary build/debug files
 .utmp/
+
+# Claude Code
+/.claude/hooks/__pycache__/

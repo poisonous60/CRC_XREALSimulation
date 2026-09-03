@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "e:/260618/HCI개론/CRC_XREALSimulation_origin/.claude/hooks/writing_check.py"
+            ],
+            "timeout": 20,
+            "statusMessage": "Checking writing"
+          }
+        ]
+      }
+    ]
+  }
+}
