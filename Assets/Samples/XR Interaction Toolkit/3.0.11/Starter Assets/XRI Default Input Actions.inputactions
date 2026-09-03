@@ -1,5 +1,4 @@
 {
-    "version": 1,
     "name": "XRI Default Input Actions",
     "maps": [
         {
@@ -2228,17 +2227,6 @@
                 },
                 {
                     "name": "",
-                    "id": "028d96f4-ba71-4023-bff5-23369f362dcc",
-                    "path": "<XREALController>/{PinchTouched}",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "UI Press",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "5b4ef08d-9ddd-4f0a-8539-d1114d14d143",
                     "path": "<XRController>{RightHand}/{Trigger}",
                     "interactions": "",
@@ -2581,17 +2569,6 @@
                     "name": "",
                     "id": "05c1e38e-79dd-41cb-95d5-74f42e65d92f",
                     "path": "<Touchscreen>/position",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Point",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "34975c53-0025-4dce-8083-d87dcbc9b454",
-                    "path": "<XREALController>/primary2DAxis",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -2944,17 +2921,6 @@
                     "name": "",
                     "id": "198e6869-709e-448d-96d4-27186c9d56e6",
                     "path": "<Touchscreen>/Press",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Click",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "08080bc9-3958-459d-a40b-817a29559433",
-                    "path": "<XREALController>/{PinchTouched}",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
