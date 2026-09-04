@@ -412,6 +412,12 @@ public class ARDetectorHud : MonoBehaviour
                     radiationValue >= 0f &&
                     IsFinite(radiationValue);
 
+                if (!hasRadiation && hasPlacedMarker)
+                {
+                    radiationValue = markerState.radiationValue;
+                    hasRadiation = radiationValue >= 0f && IsFinite(radiationValue);
+                }
+
                 if (hasRadiation)
                     textBuilder.Append(radiationValue.ToString("F3"));
                 else

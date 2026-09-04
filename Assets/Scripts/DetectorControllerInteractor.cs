@@ -55,8 +55,7 @@ public class DetectorControllerInteractor : MonoBehaviour
     {
         triggerAction?.Disable();
         UnbindVirtualController();
-        RollbackActiveInteraction(
-            markerManager != null && markerManager.isActiveAndEnabled);
+        RollbackActiveInteraction();
     }
 
     private void OnDestroy()
@@ -72,16 +71,16 @@ public class DetectorControllerInteractor : MonoBehaviour
     private void OnApplicationPause(bool paused)
     {
         if (paused)
-            RollbackActiveInteraction(true);
+            RollbackActiveInteraction();
     }
 
     private void OnApplicationFocus(bool hasFocus)
     {
         if (!hasFocus)
-            RollbackActiveInteraction(true);
+            RollbackActiveInteraction();
     }
 
-    private void RollbackActiveInteraction(bool refreshEstimator)
+    private void RollbackActiveInteraction()
     {
         virtualPadHeld = false;
         pointerDownQueued = false;
@@ -94,10 +93,7 @@ public class DetectorControllerInteractor : MonoBehaviour
 
         if (markerManager.HasActiveDetectorMove)
         {
-            markerManager.TryEndActiveDetectorMove(
-                false,
-                refreshEstimator && markerManager.isActiveAndEnabled,
-                out _);
+            markerManager.TryEndActiveDetectorMove(false, out _);
         }
 
         markerManager.ClearDetectorHover();

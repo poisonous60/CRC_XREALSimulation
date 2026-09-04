@@ -27,7 +27,6 @@ public class BeamProControllerBridge : MonoBehaviour
     [SerializeField] private RoomCoordinateSystem roomCoordinateSystem;
     [SerializeField] private QRScanner qrScanner;
     [SerializeField] private RadiationReceiver radiationReceiver;
-    [SerializeField] private RadiationSourceEstimator radiationSourceEstimator;
 
     [SerializeField] private XREALCaptureManager captureManager;
     [Header("Controller UI")]
@@ -579,9 +578,6 @@ public class BeamProControllerBridge : MonoBehaviour
         if (radiationReceiver == null)
             radiationReceiver = UnityEngine.Object.FindFirstObjectByType<RadiationReceiver>();
 
-        if (radiationSourceEstimator == null)
-            radiationSourceEstimator = UnityEngine.Object.FindFirstObjectByType<RadiationSourceEstimator>();
-
         if (captureManager == null)
         {
             captureManager = UnityEngine.Object.FindFirstObjectByType<XREALCaptureManager>();
@@ -863,7 +859,10 @@ public class BeamProControllerBridge : MonoBehaviour
         bool serverAvailable = radiationReceiver != null;
         bool connected = serverAvailable && radiationReceiver.IsConnected;
         bool connecting = serverAvailable && radiationReceiver.IsConnecting;
-        bool freshData = connected && radiationReceiver.HasFreshRadiationData;
+        bool freshData =
+            connected &&
+            radiationReceiver.HasFreshRadiationData &&
+            HasValidRadiationValue(radiationReceiver.LatestDeviceData);
         bool roomPending =
             roomCoordinateSystem != null && roomCoordinateSystem.HasPendingPlacement;
         bool roomPoseValid =
@@ -999,15 +998,6 @@ public class BeamProControllerBridge : MonoBehaviour
             requiredAction = "ADD FIRST DETECTOR";
             requiredInstruction = "Tap ADD DETECTOR and scan its QR.";
         }
-        else if (placedCount < 4)
-        {
-            int remaining = 4 - placedCount;
-            requiredAction = remaining == 1
-                ? "ADD 1 MORE DETECTOR"
-                : $"ADD {remaining} MORE DETECTORS";
-            requiredInstruction =
-                "Four placed detectors are required for source estimation.";
-        }
         else if (!freshData)
         {
             requiredAction = receivedRadiationThisConnection
@@ -1017,36 +1007,6 @@ public class BeamProControllerBridge : MonoBehaviour
                 ? "No fresh CPS is arriving from the server."
                 : "The server must send a CPS snapshot before measurement starts.";
             guideColor = new Color(1f, 0.78f, 0.34f, 1f);
-        }
-        else if (radiationSourceEstimator != null)
-        {
-            switch (radiationSourceEstimator.State)
-            {
-                case RadiationSourceEstimator.EstimatorState.WaitingForDetectors:
-                    requiredAction = "CHECK LIVE CPS FOR ALL DETECTORS";
-                    requiredInstruction =
-                        "Every placed detector ID must be present in the server data.";
-                    guideColor = new Color(1f, 0.86f, 0.38f, 1f);
-                    break;
-                case RadiationSourceEstimator.EstimatorState.InsufficientGeometry:
-                    requiredAction = "REPOSITION DETECTORS";
-                    requiredInstruction =
-                        "Place detectors in a wide square instead of along one line.";
-                    guideColor = new Color(1f, 0.86f, 0.38f, 1f);
-                    break;
-                case RadiationSourceEstimator.EstimatorState.OutOfSearchBounds:
-                    requiredAction = "CHECK ROOM AND DETECTOR POSITIONS";
-                    requiredInstruction =
-                        "The source estimate is outside the configured search area.";
-                    guideColor = new Color(1f, 0.86f, 0.38f, 1f);
-                    break;
-                case RadiationSourceEstimator.EstimatorState.PoorFit:
-                    requiredAction = "CHECK DETECTOR POSITIONS AND CPS";
-                    requiredInstruction =
-                        "The current readings do not produce a reliable source estimate.";
-                    guideColor = new Color(1f, 0.86f, 0.38f, 1f);
-                    break;
-            }
         }
 
         string guideText = string.IsNullOrWhiteSpace(requiredAction)
@@ -1078,6 +1038,20 @@ public class BeamProControllerBridge : MonoBehaviour
                 scanActive || roomPending || detectorPending ||
                 (connected && hasUndoDetector && !undoWaitingForRestore)
         };
+    }
+
+    private static bool HasValidRadiationValue(IReadOnlyDictionary<string, float> deviceData)
+    {
+        if (deviceData == null)
+            return false;
+
+        foreach (KeyValuePair<string, float> pair in deviceData)
+        {
+            if (pair.Value >= 0f && !float.IsNaN(pair.Value) && !float.IsInfinity(pair.Value))
+                return true;
+        }
+
+        return false;
     }
 
     private static string SafeUiValue(string value, string fallback)

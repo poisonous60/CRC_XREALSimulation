@@ -223,14 +223,6 @@ public sealed class RoomCoordinateSystem : MonoBehaviour
             ? markerManager.RestoreMissingMarkersFromRoomCoordinates(this)
             : 0;
 
-        RadiationSourceEstimator estimator =
-            FindFirstObjectByType<RadiationSourceEstimator>();
-        if (estimator != null)
-        {
-            estimator.SetCoordinateFrame(coordinateFrame);
-            estimator.RequestEstimateNow();
-        }
-
         Pose calibratedPose = new Pose(
             coordinateFrame.position,
             coordinateFrame.rotation);
@@ -276,16 +268,6 @@ public sealed class RoomCoordinateSystem : MonoBehaviour
 
         if (markerManager != null)
             markerManager.InvalidateRoomLocalization(reason);
-        else
-        {
-            RadiationSourceEstimator estimator =
-                FindFirstObjectByType<RadiationSourceEstimator>();
-            if (estimator != null)
-            {
-                estimator.SetCoordinateFrame(null);
-                estimator.ClearEstimate();
-            }
-        }
 
         if (!hadRoomLocalization)
             return;

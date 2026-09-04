@@ -59,13 +59,6 @@ public class DetectorWorldMarkerManager : MonoBehaviour
     [Tooltip("Require ROOM_ORIGIN calibration before accepting detector QR placement. This prevents session-space coordinates from entering the room database.")]
     [SerializeField] private bool requireRoomCalibrationBeforeDetectorPlacement = true;
 
-    [Header("Source Localization")]
-    [Tooltip("Run the Phase-1 inverse-square/Poisson single-source estimator after ROOM_ORIGIN calibration.")]
-    [SerializeField] private bool enableSingleSourceEstimator = true;
-
-    [Tooltip("Optional. Created on this GameObject automatically when empty.")]
-    [SerializeField] private RadiationSourceEstimator radiationSourceEstimator;
-
     [Header("Spatial Anchor Storage")]
     [SerializeField] private bool useSpatialAnchors = false;
     [SerializeField] private DetectorSpatialAnchorManager spatialAnchorManager;
@@ -233,6 +226,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         new Dictionary<string, MarkerInfo>(StringComparer.OrdinalIgnoreCase);
     private readonly List<string> sortedHudDetectorIds = new List<string>();
     private readonly List<string> placedDetectorOrder = new List<string>();
+    private float latestAggregateRadiationValue = -1f;
     private readonly HashSet<string> liveRadiationDetectorIds =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     private bool spatialEventsSubscribed = false;
@@ -266,6 +260,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         lastSnapshotFreshnessState = false;
         lastRadiationSnapshotTime = float.NegativeInfinity;
         liveRadiationDetectorIds.Clear();
+        latestAggregateRadiationValue = -1f;
         QRScanner.OnScanStarted += NotifyQrScanStarted;
         QRScanner.OnQRDetectedDetailed += HandleQrDetected;
         RadiationReceiver.OnRadiationDataReceived += HandleRadiationDataReceived;
@@ -276,7 +271,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
     private void OnDisable()
     {
-        AbortControllerDetectorInteraction(true, false);
+        AbortControllerDetectorInteraction(true);
         QRScanner.OnScanStarted -= NotifyQrScanStarted;
         QRScanner.OnQRDetectedDetailed -= HandleQrDetected;
         RadiationReceiver.OnRadiationDataReceived -= HandleRadiationDataReceived;
@@ -286,7 +281,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        AbortControllerDetectorInteraction(false, false);
+        AbortControllerDetectorInteraction(false);
         foreach (var pair in markers)
             DestroyMarkerVisualResources(pair.Value);
     }
@@ -399,7 +394,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
                 return true;
             }
 
-            AbortControllerDetectorInteraction(false, false);
+            AbortControllerDetectorInteraction(false);
             return false;
         }
 
@@ -566,8 +561,6 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
         marker.isControllerMoving = true;
         marker.isControllerHovered = true;
-        if (enableSingleSourceEstimator && radiationSourceEstimator != null)
-            radiationSourceEstimator.ClearEstimate();
 
         UpdateMarkerVisual(marker, marker.lastRadiationValue);
         resultMessage = $"Moving detector: {detectorId}";
@@ -612,24 +605,10 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
     public bool TryEndActiveDetectorMove(bool commit, out string resultMessage)
     {
-        return EndActiveDetectorMove(commit, true, out resultMessage);
+        return EndActiveDetectorMove(commit, out resultMessage);
     }
 
-    public bool TryEndActiveDetectorMove(
-        bool commit,
-        bool refreshEstimator,
-        out string resultMessage)
-    {
-        return EndActiveDetectorMove(
-            commit,
-            refreshEstimator,
-            out resultMessage);
-    }
-
-    private bool EndActiveDetectorMove(
-        bool commit,
-        bool refreshEstimator,
-        out string resultMessage)
+    private bool EndActiveDetectorMove(bool commit, out string resultMessage)
     {
         if (activeDetectorMoveSession == null)
         {
@@ -650,8 +629,6 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         if (!commit)
         {
             RestoreDetectorMoveSession(session);
-            if (refreshEstimator)
-                RefreshRadiationSourceAfterDetectorMove();
 
             resultMessage = $"Detector move cancelled: {marker.detectorId}";
             Debug.Log($"[DetectorWorldMarkerManager] Controller move cancelled: {marker.detectorId}");
@@ -686,8 +663,6 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
         ForceMarkerVisible(marker);
         UpdateMarkerVisual(marker, marker.lastRadiationValue);
-        if (refreshEstimator)
-            RefreshRadiationSourceAfterDetectorMove();
 
         resultMessage = $"Detector moved: {marker.detectorId}";
         Debug.Log(
@@ -745,28 +720,13 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         UpdateLabel(marker, marker.lastRadiationValue, false);
     }
 
-    private void RefreshRadiationSourceAfterDetectorMove()
-    {
-        if (!enableSingleSourceEstimator)
-            return;
-
-        EnsureRadiationSourceEstimator();
-        if (radiationSourceEstimator == null)
-            return;
-
-        radiationSourceEstimator.ClearEstimate();
-        radiationSourceEstimator.RequestEstimateNow();
-    }
-
-    private void AbortControllerDetectorInteraction(
-        bool restoreActiveMove,
-        bool refreshEstimator)
+    private void AbortControllerDetectorInteraction(bool restoreActiveMove)
     {
         if (activeDetectorMoveSession != null)
         {
             if (restoreActiveMove)
             {
-                EndActiveDetectorMove(false, refreshEstimator, out _);
+                EndActiveDetectorMove(false, out _);
             }
             else
             {
@@ -831,7 +791,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
     public void NotifyQrScanStarted()
     {
-        AbortControllerDetectorInteraction(true, true);
+        AbortControllerDetectorInteraction(true);
         // Starting a new scan invalidates the old one-step delete token. Cancel
         // during camera startup must stop the scan, not delete a previous detector.
         lastInteractedDetectorId = "";
@@ -843,7 +803,6 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         EnsurePlaneDetectionManager();
         EnsureCoordinateDatabase();
         EnsureRoomCoordinateSystem();
-        EnsureRadiationSourceEstimator();
         EnsureSpatialAnchorManager();
         EnsureRadiationReceiver();
         EnsureDetectorControllerInteractor();
@@ -852,6 +811,12 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         InitializePlacedDetectorOrderFromDatabase();
 
         SetServerConnectionState(radiationReceiver != null && radiationReceiver.IsConnected);
+        if (radiationReceiver != null &&
+            radiationReceiver.IsConnected &&
+            radiationReceiver.HasFreshRadiationData)
+        {
+            HandleRadiationDataReceived(radiationReceiver.LatestDeviceData);
+        }
 
         if (loadSavedCoordinatesOnStart)
             LoadSavedCoordinatesWithoutAnchors();
@@ -874,7 +839,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
     private void HandleQrDetected(string qrText, Vector2 imageCenter, int imageWidth, int imageHeight, float qrPixelSize)
     {
-        AbortControllerDetectorInteraction(true, true);
+        AbortControllerDetectorInteraction(true);
 
         // ROOM_ORIGIN is a coordinate-frame command, not a radiation detector ID.
         // RoomCoordinateSystem owns its preview/confirmation transaction.
@@ -1815,7 +1780,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
     private bool RemoveDetectorAndSavedData(string detectorId)
     {
-        AbortControllerDetectorInteraction(true, false);
+        AbortControllerDetectorInteraction(true);
 
         detectorId = NormalizeDetectorId(detectorId);
         if (string.IsNullOrEmpty(detectorId) ||
@@ -1846,8 +1811,6 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         DestroyMarkerVisualResources(marker);
         if (marker.root != null)
             Destroy(marker.root);
-
-        RefreshRadiationSourceAfterDetectorMove();
 
         Debug.Log($"[DetectorWorldMarkerManager] Detector removed from the scene and saved data: {detectorId}");
         return true;
@@ -2006,21 +1969,6 @@ public class DetectorWorldMarkerManager : MonoBehaviour
             roomCoordinateSystem = gameObject.AddComponent<RoomCoordinateSystem>();
 
         roomCoordinateSystem.Initialize(this, coordinateDatabase, fallbackCamera);
-    }
-
-    private void EnsureRadiationSourceEstimator()
-    {
-        if (!enableSingleSourceEstimator)
-            return;
-
-        if (radiationSourceEstimator == null)
-            radiationSourceEstimator = GetComponent<RadiationSourceEstimator>();
-
-        if (radiationSourceEstimator == null)
-            radiationSourceEstimator = gameObject.AddComponent<RadiationSourceEstimator>();
-
-        if (roomCoordinateSystem != null && roomCoordinateSystem.IsCalibrated)
-            radiationSourceEstimator.SetCoordinateFrame(roomCoordinateSystem.CoordinateFrame);
     }
 
     private void EnsureRadiationReceiver()
@@ -2321,7 +2269,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
     private void SetServerConnectionState(bool connected)
     {
         if (!connected)
-            AbortControllerDetectorInteraction(true, false);
+            AbortControllerDetectorInteraction(true);
 
         bool changed = serverConnected != connected;
         serverConnected = connected;
@@ -2334,6 +2282,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
             lastSnapshotFreshnessState = false;
             lastRadiationSnapshotTime = float.NegativeInfinity;
             liveRadiationDetectorIds.Clear();
+            latestAggregateRadiationValue = -1f;
         }
 
         foreach (var pair in markers)
@@ -2348,7 +2297,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         }
     }
 
-    private void HandleRadiationDataReceived(Dictionary<string, float> data)
+    private void HandleRadiationDataReceived(IReadOnlyDictionary<string, float> data)
     {
         if (data == null)
             return;
@@ -2357,6 +2306,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         lastRadiationSnapshotTime = Time.unscaledTime;
         liveRadiationDetectorIds.Clear();
 
+        float maximumValue = -1f;
         foreach (var kvp in data)
         {
             string detectorId = NormalizeDetectorId(kvp.Key);
@@ -2370,9 +2320,21 @@ public class DetectorWorldMarkerManager : MonoBehaviour
             }
 
             liveRadiationDetectorIds.Add(detectorId);
+            if (kvp.Value > maximumValue)
+                maximumValue = kvp.Value;
+        }
 
-            if (markers.TryGetValue(detectorId, out MarkerInfo marker))
-                UpdateMarkerVisual(marker, kvp.Value);
+        latestAggregateRadiationValue = maximumValue;
+
+        // Temporary: every sphere shows the maximum of all live sensors until the aggregation rule is decided.
+        if (maximumValue >= 0f)
+        {
+            foreach (var pair in markers)
+            {
+                UpdateMarkerVisual(pair.Value, maximumValue);
+                if (useCoordinateDatabase && coordinateDatabase != null)
+                    coordinateDatabase.UpdateRadiationValue(pair.Key, maximumValue);
+            }
         }
 
         lastSnapshotFreshnessState = IsRadiationSnapshotFresh();
@@ -2381,9 +2343,6 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         // preceding snapshot. Re-evaluate every marker so that detector is hidden.
         foreach (var pair in markers)
             ApplyMarkerVisibility(pair.Value);
-
-        if (useCoordinateDatabase && coordinateDatabase != null)
-            coordinateDatabase.UpdateRadiationValues(data);
     }
 
     private MarkerInfo CreateOrMoveMarker(
@@ -2899,15 +2858,9 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
     private float GetLatestRadiationValue(string detectorId, float fallbackValue)
     {
-        detectorId = NormalizeDetectorId(detectorId);
-        if (radiationReceiver != null &&
-            radiationReceiver.LatestDeviceData != null &&
-            radiationReceiver.LatestDeviceData.TryGetValue(detectorId, out float latestValue))
-        {
-            return latestValue;
-        }
-
-        return fallbackValue;
+        return IsRadiationSnapshotFresh() && latestAggregateRadiationValue >= 0f
+            ? latestAggregateRadiationValue
+            : fallbackValue;
     }
 
     private void HideFalloffShells(MarkerInfo marker)
@@ -2968,7 +2921,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         bool radiationReady = isPreview ||
                               !hideMarkersWithoutFreshRadiationData ||
                               (IsRadiationSnapshotFresh() &&
-                               liveRadiationDetectorIds.Contains(marker.detectorId));
+                               liveRadiationDetectorIds.Count > 0);
 
         bool visible = marker.visibilityRequested &&
                        roomReady &&
@@ -3354,7 +3307,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
     /// </summary>
     public int RestoreMissingMarkersFromRoomCoordinates(RoomCoordinateSystem roomFrame)
     {
-        AbortControllerDetectorInteraction(true, false);
+        AbortControllerDetectorInteraction(true);
 
         if (roomFrame == null ||
             !roomFrame.IsCalibrated ||
@@ -3478,7 +3431,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
     /// </summary>
     public void InvalidateRoomLocalization(string reason)
     {
-        AbortControllerDetectorInteraction(true, false);
+        AbortControllerDetectorInteraction(true);
         RollbackActivePlacementSession();
 
         foreach (var pair in markers)
@@ -3502,12 +3455,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         lastSnapshotFreshnessState = false;
         lastRadiationSnapshotTime = float.NegativeInfinity;
         liveRadiationDetectorIds.Clear();
-
-        if (radiationSourceEstimator != null)
-        {
-            radiationSourceEstimator.SetCoordinateFrame(null);
-            radiationSourceEstimator.ClearEstimate();
-        }
+        latestAggregateRadiationValue = -1f;
 
         Debug.LogWarning(
             $"[DetectorWorldMarkerManager] Room localization invalidated; " +
@@ -3516,7 +3464,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
     public void ClearSavedMarkers()
     {
-        AbortControllerDetectorInteraction(true, false);
+        AbortControllerDetectorInteraction(true);
 
         HashSet<string> detectorIds =
             new HashSet<string>(markers.Keys, StringComparer.OrdinalIgnoreCase);
@@ -3556,9 +3504,6 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
         if (coordinateDatabase != null)
             coordinateDatabase.ClearAllCoordinates();
-
-        if (radiationSourceEstimator != null)
-            radiationSourceEstimator.ClearEstimate();
     }
 
     public void PrintSavedCoordinatesToLog()
