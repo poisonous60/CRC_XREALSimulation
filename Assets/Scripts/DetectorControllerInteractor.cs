@@ -124,6 +124,11 @@ public class DetectorControllerInteractor : MonoBehaviour
             triggerAction != null && triggerAction.enabled &&
             triggerAction.ReadValue<float>() >= 0.5f;
         bool isPressed = virtualPadHeld || actionPressed;
+#if UNITY_EDITOR
+        // The XR Device Simulator latches a controller's trigger once Tab moves manipulation elsewhere.
+        if (isPressed && Mouse.current != null && !Mouse.current.leftButton.isPressed)
+            isPressed = false;
+#endif
         bool pressedThisFrame =
             pointerDownQueued ||
             (triggerAction != null && triggerAction.enabled &&
