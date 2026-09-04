@@ -14,10 +14,11 @@ Read before working. Located in `e:\260618\HCI개론\3d effect test\docs\`.
 
 Reply in Korean. Write every file, comment, and commit message in English.
 
-- This is a handover for learning. Point at the concept, the official doc, and the
-  order to practice in. Do not hand over finished scripts.
+- This is a submission prototype. Deliver working code, not exercises.
 - Do not guess. Cite real files and code with `file:line`.
 - Verify API and engine behavior against official docs instead of recalling it.
+- Answering a knowledge question always attaches the reference link it rests on: a
+  clickable URL for an official doc, a `file:line` for repo code.
 - Separate confirmed fact, inference, and unverifiable. Never call something working
   that you did not run.
 - Define a term the first time it appears. Name the concrete thing (class, file,

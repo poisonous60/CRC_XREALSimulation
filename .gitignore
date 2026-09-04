@@ -6,6 +6,8 @@
 /[Bb]uilds/
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
+/Packages/com.mibdev.fullscreen-editor/
+Assets/ShaderHistory/
 
 # Visual Studio / Rider / VSCode
 .vs/
@@ -13,13 +15,11 @@
 .vscode/
 *.csproj
 *.sln
+*.slnx
 *.user
 *.userprefs
 *.pidb
 *.booproj
-*.apk
-*.aab
-apkfiles/
 
 # OS files
 .DS_Store
@@ -31,7 +31,6 @@ Thumbs.db
 # Gradle / Android
 .gradle/
 
-n# Android build outputs
 # Android build outputs
 *.apk
 *.aab
@@ -42,4 +41,6 @@ UnityDebugUpload/
 .utmp/
 
 # Claude Code
-/.claude/hooks/__pycache__/
+.claude/
+plans/
+
