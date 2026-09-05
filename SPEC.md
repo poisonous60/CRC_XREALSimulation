@@ -117,15 +117,9 @@ A reading update stays fresh for 5 s after it arrives. While there is no fresh r
 
 Options: register a wall reference QR each launch; rely on the glasses' saved spatial anchors, which try to re-find a position after a restart; or repeat Placement each launch.
 
-The method is a wall reference QR registered once per launch. The Source Marker's position is saved relative to it and re-created when it is registered again.
+The method is to repeat Placement each launch. With one Source Marker, registering a wall QR takes the same aim as placing the marker itself and adds that aim's error on top of the original placement error, so no saved position is restored. After a restart, and after the application returns from the background, the Source Marker is absent until the Operator does 3.10 again.
 
-Every launch, the Operator, wearing the glasses with the Beam Pro in hand, does this:
-
-1. Tap Scan and hold the rear camera to the wall QR until it reads.
-2. Aim the glasses' center at that QR. A gray preview appears where the gaze meets the wall; only a near-vertical surface counts as the wall.
-3. Tap Place. The saved Source Marker returns at its position.
-
-Until step 3 is done, the Source Marker stays hidden and no Placement can start.
+The wall reference QR stays in the build as a setting, off in the delivered scene, for the case where several markers must return from one registration. With it on, every launch starts with: tap Scan and hold the rear camera to the wall QR until it reads; aim the glasses' center at that QR until a gray preview appears on the wall, which must be near vertical; tap Place. The saved Source Marker then returns at its position, and no Placement can start before that.
 
 ### 3.4 Source Marker appearance (TBD-4)
 
@@ -167,7 +161,7 @@ The glow takes the Source Marker's level color, or white while there is no curre
 
 Options: to be designed.
 
-The Beam Pro panel, used by the Operator, has an address field for the laptop's address and three workflow buttons: Scan, Place, and Cancel. There is no separate Connect button; finishing the address entry or tapping Scan connects when there is no connection. Button labels change with the step. Scan reads "Connect & Scan", "Scan Room QR", "Add Detector", or "Scanning...". Place reads "Place Room" or "Place Detector". Cancel reads "Cancel Scan" or "Cancel Place". Below the buttons a workflow guide names the next step in capitals with a one-line instruction under it: "CONNECT SERVER", "SCAN ROOM QR", "AIM AT THE ROOM QR", "TAP PLACE ROOM", "SCAN DETECTOR QR", "AIM AT THE DETECTOR POSITION", "TAP PLACE DETECTOR", plus a few states for waiting on the server, capture, and setup errors. The panel also carries the Start Record / Stop Record button and the photo button of 3.5, and a text list of the reporting Detector IDs with their CPS.
+The Beam Pro panel, used by the Operator, has an address field for the laptop's address and three workflow buttons: Add Source, Place, and Cancel. There is no separate Connect button; finishing the address entry or tapping Add Source connects when there is no connection. Button labels change with the step. Place reads "Place Source". Cancel reads "Cancel Place". Below the buttons a workflow guide names the next step in capitals with a one-line instruction under it: "CONNECT SERVER", "ADD THE SOURCE", "AIM AT THE SOURCE", "TAP PLACE SOURCE", plus a few states for waiting on the server, capture, and setup errors. With the wall QR setting of 3.3 on, the first button reads "Connect & Scan", "Scan Room QR", or "Scanning..." until the room is registered, Place reads "Place Room" during that registration, Cancel reads "Cancel Scan" during a scan, and the guide adds the wall QR steps. The panel also carries the Start Record / Stop Record button and the photo button of 3.5, and a text list of the reporting Detector IDs with their CPS.
 
 The glasses draw text rows head-locked 1.5 m ahead, headed DETECTOR / CPS / DISTANCE: one row per reporting Detector ID with its CPS, plus the wearer-to-Source Marker distance, and the row of a sphere near the view center is highlighted. When the Source Marker is out of view, a text indicator sits at the edge of the view (5 % in from the edge, in one of four directions) pointing toward it.
 
@@ -175,13 +169,13 @@ The glasses draw text rows head-locked 1.5 m ahead, headed DETECTOR / CPS / DIST
 
 Options: to be designed.
 
-After 3.3 is complete, the Operator, wearing the glasses with the Beam Pro in hand, does this:
+The Operator, wearing the glasses with the Beam Pro in hand, does this:
 
-1. Tap Scan and hold the rear camera to any Detector sticker until it reads.
+1. Tap Add Source.
 2. Aim the glasses' center at the Source. A gray preview sphere follows the gaze along the nearest detected surface, the table top in the lab; where no surface is detected there is no preview.
-3. Tap Place. The Source Marker is fixed there and saved.
+3. Tap Place. The Source Marker is fixed there.
 
-Cancel during the scan or while the preview is shown keeps the previous position. Cancel with no scan or preview active removes the most recently placed Source Marker and its saved position. Repeating the steps moves the one Source Marker. A sticker scanned before 3.3 is complete is ignored.
+Cancel while the preview is shown keeps the previous position; Cancel with nothing pending does nothing. Repeating the steps moves the one Source Marker. No sticker is scanned: the Detector stickers carry nothing the application uses.
 
 ### 3.11 Server rate and message format (TBD-7)
 
@@ -196,7 +190,7 @@ The working value is the test server's: one reading update per second carrying e
 - The shells around the sphere in 3.4 may stay or go.
 - 3.5 and 3.6 may each stay or go.
 - 3.7 is an acceptance value; the build does not measure it.
-- The Cancel behavior in 3.10 that removes a placed Source Marker may stay or go.
 - The rows in 3.9 show each Detector ID with its CPS, while X-02 says readings affect only the Source Marker. The rows may stay or go.
-- The labels in 3.9 say "Detector" ("Add Detector", "Place Detector", the DETECTOR column) for what is the Source Marker. They may stay or be renamed.
+- The DETECTOR column heading in 3.9 sits above a first row that is the Source Marker. It may stay or be renamed.
+- F-08 asks for the Source Marker to be back after a restart; with 3.3 choosing a new Placement each launch, that is the Operator's work rather than the application's. The wording may stay or change.
 - The real server's rate and format (3.11) wait on the lab.

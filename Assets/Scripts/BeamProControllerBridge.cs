@@ -329,7 +329,30 @@ public class BeamProControllerBridge : MonoBehaviour
         if ((roomCoordinateSystem != null && roomCoordinateSystem.HasPendingPlacement) ||
             (markerManager != null && markerManager.HasActivePlacement))
         {
-            Warn("Place or cancel the current preview before scanning another QR");
+            Warn("Place or cancel the current preview first");
+            return;
+        }
+
+        if (markerManager == null)
+        {
+            Warn("DetectorWorldMarkerManager not found. Cannot start a placement or a scan.");
+            return;
+        }
+
+        if (!NeedsRoomQrScan())
+        {
+            ConnectIfNeeded();
+            radiationReceiver?.CancelPendingQrScan();
+            if (markerManager.TryBeginSourcePlacement(out string sourceMessage))
+            {
+                ShowControllerActionStatus(sourceMessage, Color.white);
+                Log(sourceMessage);
+            }
+            else
+            {
+                ShowControllerActionStatus(sourceMessage, Color.yellow);
+                Warn(sourceMessage);
+            }
             return;
         }
 
@@ -559,6 +582,13 @@ public class BeamProControllerBridge : MonoBehaviour
 
         if (!string.IsNullOrWhiteSpace(ip))
             radiationReceiver.ConnectToServerWithIp(ip);
+    }
+
+    private bool NeedsRoomQrScan()
+    {
+        bool roomRequired = markerManager == null || markerManager.RequiresRoomCalibration;
+        bool roomCalibrated = roomCoordinateSystem != null && roomCoordinateSystem.IsCalibrated;
+        return roomRequired && !roomCalibrated;
     }
 
     private void ResolveReferences()
@@ -867,8 +897,7 @@ public class BeamProControllerBridge : MonoBehaviour
             roomCoordinateSystem != null && roomCoordinateSystem.HasPendingPlacement;
         bool roomPoseValid =
             roomPending && roomCoordinateSystem.HasValidPendingPose;
-        bool roomCalibrated =
-            roomCoordinateSystem != null && roomCoordinateSystem.IsCalibrated;
+        bool roomCalibrated = !NeedsRoomQrScan();
         bool detectorPending =
             markerManager != null && markerManager.HasActivePlacement;
         bool detectorPoseValid =
@@ -881,14 +910,6 @@ public class BeamProControllerBridge : MonoBehaviour
         int placedCount = markerManager != null
             ? markerManager.CurrentRoomPlacedDetectorCount
             : 0;
-        string ignoredUndoDetectorId = "";
-        bool undoWaitingForRestore = false;
-        bool hasUndoDetector =
-            markerManager != null &&
-            markerManager.TryPeekLastPlacedDetector(
-                out ignoredUndoDetectorId,
-                out undoWaitingForRestore);
-
         string requiredAction = "";
         string requiredInstruction = "";
         Color guideColor = new Color(0.72f, 0.90f, 1f, 1f);
@@ -911,13 +932,19 @@ public class BeamProControllerBridge : MonoBehaviour
             requiredInstruction = "Restart the app or check the RadiationReceiver setup.";
             guideColor = new Color(1f, 0.55f, 0.50f, 1f);
         }
+        else if (markerManager == null)
+        {
+            requiredAction = "APP SETUP NOT READY";
+            requiredInstruction = "Restart the app; the placement manager is missing.";
+            guideColor = new Color(1f, 0.55f, 0.50f, 1f);
+        }
         else if (scanActive)
         {
             requiredAction = roomCalibrated
-                ? "SCAN DETECTOR QR"
+                ? "SCAN A DETECTOR STICKER"
                 : "SCAN ROOM QR";
             requiredInstruction = roomCalibrated
-                ? "Point the Beam Pro camera at the detector QR."
+                ? "Any Detector sticker starts the Source placement."
                 : "Point the Beam Pro camera at the room reference QR.";
         }
         else if (roomPending)
@@ -939,47 +966,45 @@ public class BeamProControllerBridge : MonoBehaviour
         }
         else if (detectorPending)
         {
-            string detectorId = SafeUiValue(
-                markerManager.ActivePlacementDetectorId,
-                "DETECTOR");
             if (detectorPoseValid)
             {
-                requiredAction = "TAP PLACE DETECTOR";
-                requiredInstruction = $"{detectorId} is aligned at the gray preview.";
+                requiredAction = "TAP PLACE SOURCE";
+                requiredInstruction = "The gray preview sits on the Source.";
                 guideColor = new Color(0.55f, 1f, 0.68f, 1f);
             }
             else
             {
-                requiredAction = "AIM AT THE DETECTOR POSITION";
+                requiredAction = "AIM AT THE SOURCE";
                 requiredInstruction =
-                    $"Keep aiming until the gray preview for {detectorId} appears.";
+                    "Center the glasses on the Source until the gray preview appears.";
                 guideColor = new Color(1f, 0.86f, 0.38f, 1f);
             }
         }
         else if (connecting)
         {
             requiredAction = "WAIT FOR SERVER CONNECTION";
-            requiredInstruction =
-                $"Connecting to {SafeUiValue(radiationReceiver.CurrentServerIp, "server")}.";
+            requiredInstruction = roomCalibrated
+                ? $"Connecting to {SafeUiValue(radiationReceiver.CurrentServerIp, "server")}. ADD SOURCE already works."
+                : $"Connecting to {SafeUiValue(radiationReceiver.CurrentServerIp, "server")}.";
             guideColor = new Color(1f, 0.86f, 0.38f, 1f);
         }
         else if (!connected)
         {
             requiredAction = "CONNECT SERVER";
-            requiredInstruction = "Check Server IP, then tap CONNECT & SCAN.";
+            requiredInstruction = roomCalibrated
+                ? "Check Server IP, then tap ADD SOURCE."
+                : "Check Server IP, then tap CONNECT & SCAN.";
             guideColor = latestServerStatusColor.a > 0.01f
                 ? latestServerStatusColor
                 : new Color(1f, 0.55f, 0.50f, 1f);
         }
-        else if (qrScanner == null ||
-                 markerManager == null ||
-                 roomCoordinateSystem == null)
+        else if (!roomCalibrated && (qrScanner == null || roomCoordinateSystem == null))
         {
             requiredAction = "APP SETUP NOT READY";
             requiredInstruction = "Restart the app before scanning a QR.";
             guideColor = new Color(1f, 0.55f, 0.50f, 1f);
         }
-        else if (captureBusy)
+        else if (captureBusy && !roomCalibrated)
         {
             requiredAction = "FINISH CAMERA CAPTURE";
             requiredInstruction = "QR scanning is locked while the capture camera is busy.";
@@ -995,8 +1020,8 @@ public class BeamProControllerBridge : MonoBehaviour
         }
         else if (placedCount == 0)
         {
-            requiredAction = "ADD FIRST DETECTOR";
-            requiredInstruction = "Tap ADD DETECTOR and scan its QR.";
+            requiredAction = "ADD THE SOURCE";
+            requiredInstruction = "Tap ADD SOURCE, then aim the glasses at the Source.";
         }
         else if (!freshData)
         {
@@ -1021,22 +1046,21 @@ public class BeamProControllerBridge : MonoBehaviour
             guideColor = guideColor,
             scanLabel = scanActive
                 ? "Scanning..."
-                : !connected
-                    ? "Connect & Scan"
-                    : !roomCalibrated
-                        ? "Scan Room QR"
-                        : "Add Detector",
-            placeLabel = roomPending ? "Place Room" : "Place Detector",
+                : roomCalibrated
+                    ? "Add Source"
+                    : !connected
+                        ? "Connect & Scan"
+                        : "Scan Room QR",
+            placeLabel = roomPending ? "Place Room" : "Place Source",
             cancelLabel = scanActive ? "Cancel Scan" : "Cancel Place",
             scanEnabled =
-                radiationReceiver != null && qrScanner != null &&
-                !captureBusy && !scanActive && !roomPending && !detectorPending,
+                radiationReceiver != null && markerManager != null &&
+                (roomCalibrated || (qrScanner != null && !captureBusy)) &&
+                !scanActive && !roomPending && !detectorPending,
             placeEnabled =
                 (roomPending && roomPoseValid) ||
                 (detectorPending && detectorPoseValid),
-            cancelEnabled =
-                scanActive || roomPending || detectorPending ||
-                (connected && hasUndoDetector && !undoWaitingForRestore)
+            cancelEnabled = scanActive || roomPending || detectorPending
         };
     }
 

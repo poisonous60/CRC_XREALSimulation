@@ -815,11 +815,12 @@ MonoBehaviour:
   waitingForPlaneStateLabel: aim at a detected plane
   useCoordinateDatabase: 1
   coordinateDatabase: {fileID: 906282734}
-  loadSavedCoordinatesOnStart: 1
-  useSpatialAnchors: 1
+  loadSavedCoordinatesOnStart: 0
+  useSpatialAnchors: 0
   spatialAnchorManager: {fileID: 588933902}
   createSpatialAnchorOnQr: 1
   parentMarkerToAnchor: 1
+  requireRoomCalibrationBeforeDetectorPlacement: 0
   hideMarkersUntilServerConnected: 1
   radiationReceiver: {fileID: 2005687756}
   cancelSelectionMaxAngleDegrees: 12
@@ -918,7 +919,7 @@ MonoBehaviour:
   saveAttemptCount: 3
   saveRetryDelaySeconds: 2
   eraseOldAnchorOnRescan: 1
-  loadAnchorsOnStart: 1
+  loadAnchorsOnStart: 0
   loadDelaySeconds: 1
   anchorSubsystemReadyTimeoutSeconds: 8
   loadedAnchorTrackingTimeoutSeconds: 30
@@ -2019,7 +2020,7 @@ MonoBehaviour:
   keyboardOpenDelay: 0.5
   connectWhenKeyboardDone: 1
   qrScanner: {fileID: 732363537}
-  startQrCameraAfterConnect: 1
+  startQrCameraAfterConnect: 0
   qrStartDelayAfterConnect: 0.3
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

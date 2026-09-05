@@ -416,10 +416,20 @@ public class XREALCaptureManager : MonoBehaviour
                 jpegData
             );
 
-            InsertJpegIntoGallery(
-                jpegData,
-                fileName
-            );
+            try
+            {
+                InsertJpegIntoGallery(
+                    jpegData,
+                    fileName
+                );
+            }
+            catch (Exception galleryError)
+            {
+                // The gallery provider class is absent from the XREAL package, so the insert throws on the device while the file is already on disk.
+                Debug.LogWarning(
+                    $"[XREALCaptureManager] Gallery insert skipped: {galleryError.Message}"
+                );
+            }
 
             ClosePhotoCapture(
                 $"JPEG saved: {fileName}"

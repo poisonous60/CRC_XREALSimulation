@@ -23,6 +23,10 @@ public class DetectorWorldMarkerManager : MonoBehaviour
     [Tooltip("Optional. If empty, the script creates a sphere automatically.")]
     [SerializeField] private GameObject markerPrefab;
 
+    [Header("Source Marker")]
+    [Tooltip("Key of the one Source Marker. A sticker scan or Add Source starts a Placement of this marker; the sticker text is never used as a key.")]
+    [SerializeField] private string sourceMarkerKey = "SOURCE";
+
     [Header("Plane Intersection Placement")]
     [Tooltip("ON = place the preview at the intersection between the glasses' center gaze ray and a detected AR plane.")]
     [SerializeField] private bool usePlaneIntersectionPlacement = true;
@@ -290,6 +294,21 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         activePlacementSession != null || !string.IsNullOrEmpty(currentFollowingDetectorId);
 
     public bool HasActiveDetectorMove => activeDetectorMoveSession != null;
+
+    public bool RequiresRoomCalibration =>
+        enableRoomCoordinateSystem && requireRoomCalibrationBeforeDetectorPlacement;
+
+    // Engine code stripping keeps only referenced component types; GameObject.CreatePrimitive needs these four in the Android build.
+    private MeshFilter StrippingGuardMeshFilter { get; set; }
+    private MeshRenderer StrippingGuardMeshRenderer { get; set; }
+    private SphereCollider StrippingGuardSphereCollider { get; set; }
+    private BoxCollider StrippingGuardBoxCollider { get; set; }
+
+    private bool IsRoomReadyForPlacement()
+    {
+        return !RequiresRoomCalibration ||
+               (roomCoordinateSystem != null && roomCoordinateSystem.IsCalibrated);
+    }
 
     public string HoveredDetectorId =>
         controllerHoveredMarker != null ? controllerHoveredMarker.detectorId : "";
@@ -802,6 +821,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         EnsurePlacementOrigin();
         EnsurePlaneDetectionManager();
         EnsureCoordinateDatabase();
+        RemoveRecordsOutsideSourceKey();
         EnsureRoomCoordinateSystem();
         EnsureSpatialAnchorManager();
         EnsureRadiationReceiver();
@@ -852,9 +872,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         if (roomCoordinateSystem != null)
             roomCoordinateSystem.CancelPendingPlacementForDetectorScan();
 
-        if (enableRoomCoordinateSystem &&
-            requireRoomCalibrationBeforeDetectorPlacement &&
-            (roomCoordinateSystem == null || !roomCoordinateSystem.IsCalibrated))
+        if (!IsRoomReadyForPlacement())
         {
             CancelActivePlacementOnly();
             Debug.LogWarning(
@@ -866,9 +884,42 @@ public class DetectorWorldMarkerManager : MonoBehaviour
             return;
         }
 
-        string detectorId = NormalizeDetectorId(qrText);
+        BeginSourcePlacement(imageCenter, imageWidth, imageHeight, qrPixelSize);
+    }
+
+    public bool TryBeginSourcePlacement(out string resultMessage)
+    {
+        AbortControllerDetectorInteraction(true);
+
+        if (roomCoordinateSystem != null)
+            roomCoordinateSystem.CancelPendingPlacementForDetectorScan();
+
+        if (!IsRoomReadyForPlacement())
+        {
+            resultMessage = "Place ROOM_ORIGIN before adding the Source";
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(NormalizeDetectorId(sourceMarkerKey)))
+        {
+            resultMessage = "Source Marker key is empty";
+            return false;
+        }
+
+        bool started = BeginSourcePlacement(Vector2.zero, 0, 0, 0f);
+        resultMessage = !started
+            ? "Source placement did not start"
+            : followPreviewCenterUntilPlaced
+                ? "Aim the glasses at the Source, then tap Place"
+                : "Source placed ahead of the glasses";
+        return started;
+    }
+
+    private bool BeginSourcePlacement(Vector2 imageCenter, int imageWidth, int imageHeight, float qrPixelSize)
+    {
+        string detectorId = NormalizeDetectorId(sourceMarkerKey);
         if (string.IsNullOrEmpty(detectorId))
-            return;
+            return false;
 
         // A new scan starts a new transaction; a later Cancel must never fall
         // through to a detector committed before this scan.
@@ -882,7 +933,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
             // pending transaction too, otherwise Place would act on the wrong ID.
             RollbackActivePlacementSession();
             Debug.Log($"[DetectorWorldMarkerManager] Rescan ignored because updating existing markers is disabled: {existingMarker.detectorId}");
-            return;
+            return false;
         }
 
         if (followPreviewCenterUntilPlaced)
@@ -911,7 +962,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
         MarkerInfo marker = CreateOrMoveMarker(detectorId, worldPosition, estimatedDistance, qrPixelSize, null);
         if (marker == null)
-            return;
+            return false;
 
         marker.lastPlacementImagePoint = placementImagePoint;
         marker.lastImageWidth = imageWidth;
@@ -939,7 +990,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
                 ? "gaze-center plane intersection"
                 : $"fixed distance ({defaultPlacementDistanceMeters:F2}m)";
             Debug.Log($"[DetectorWorldMarkerManager] Detector preview started: {detectorId}, mode={previewMode}");
-            return;
+            return true;
         }
 
         marker.isFollowingPlacementOrigin = false;
@@ -957,6 +1008,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         FinalizeSpatialBinding(detectorId, marker, worldPosition, worldRotation);
 
         Debug.Log($"[DetectorWorldMarkerManager] Detector placed from projection: {detectorId}, method={placementMethod}, pos={worldPosition}, distance={estimatedDistance:F2}m, qrPixelSize={qrPixelSize:F1}px");
+        return true;
     }
 
     /// <summary>
@@ -1358,7 +1410,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         string detectorId = NormalizeDetectorId(ActivePlacementDetectorId);
         if (string.IsNullOrEmpty(detectorId))
         {
-            resultMessage = "Scan a detector QR before placing";
+            resultMessage = "Add the Source before placing";
             return false;
         }
 
@@ -1382,8 +1434,8 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         PlaceDetector(marker.detectorId);
         bool placed = marker.isPlaced && !marker.isFollowingPlacementOrigin;
         resultMessage = placed
-            ? $"Detector placed: {marker.detectorId}"
-            : $"Detector could not be placed: {marker.detectorId}";
+            ? "Source placed"
+            : "Source could not be placed";
         return placed;
     }
 
@@ -1509,43 +1561,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
             return true;
         }
 
-        // Remove committed detectors in reverse placement order. Starting/cancelling
-        // a later QR scan does not erase this stack, so repeated Cancel Place presses
-        // remove C, then B, then A without requiring gaze selection.
-        string detectorId = "";
-        TryGetMostRecentlyPlacedDetector(
-            out detectorId,
-            out string pendingDetectorId);
-
-        if (string.IsNullOrEmpty(detectorId) &&
-            !string.IsNullOrEmpty(pendingDetectorId))
-        {
-            resultMessage =
-                $"Latest detector is waiting for ROOM_ORIGIN/anchor restore: {pendingDetectorId}";
-            return false;
-        }
-
-        if (string.IsNullOrEmpty(detectorId))
-            detectorId = NormalizeDetectorId(lastInteractedDetectorId);
-
-        lastInteractedDetectorId = "";
-
-        if (string.IsNullOrEmpty(detectorId))
-        {
-            if (!TrySelectPlacedDetectorForCancel(out detectorId, out resultMessage))
-            {
-                Debug.LogWarning($"[DetectorWorldMarkerManager] Cancel did not select a detector. {resultMessage}");
-                return false;
-            }
-        }
-
-        if (RemoveDetectorAndSavedData(detectorId))
-        {
-            resultMessage = $"Detector removed: {detectorId}";
-            return true;
-        }
-
-        resultMessage = $"Detector not found: {detectorId}";
+        resultMessage = "Nothing to cancel";
         return false;
     }
 
@@ -1947,7 +1963,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         if (coordinateDatabase != null)
             return;
 
-        coordinateDatabase = FindObjectOfType<DetectorCoordinateDatabase>();
+        coordinateDatabase = FindFirstObjectByType<DetectorCoordinateDatabase>();
 
         if (coordinateDatabase == null)
         {
@@ -1999,7 +2015,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         if (spatialAnchorManager != null)
             return;
 
-        spatialAnchorManager = FindObjectOfType<DetectorSpatialAnchorManager>();
+        spatialAnchorManager = FindFirstObjectByType<DetectorSpatialAnchorManager>();
     }
 
     private void SubscribeSpatialEvents()
@@ -3187,6 +3203,35 @@ public class DetectorWorldMarkerManager : MonoBehaviour
             roomCoordinateSystem.WorldToRoomPoint(worldPosition),
             roomCoordinateSystem.WorldToRoomRotation(worldRotation),
             calibrationFactor);
+    }
+
+    private void RemoveRecordsOutsideSourceKey()
+    {
+        if (!useCoordinateDatabase || coordinateDatabase == null)
+            return;
+
+        string sourceKey = NormalizeDetectorId(sourceMarkerKey);
+        if (string.IsNullOrEmpty(sourceKey))
+            return;
+
+        List<string> staleIds = new List<string>();
+        IReadOnlyList<DetectorCoordinateRecord> records = coordinateDatabase.GetAllRecords();
+        for (int i = 0; i < records.Count; i++)
+        {
+            DetectorCoordinateRecord record = records[i];
+            if (record != null &&
+                !string.IsNullOrWhiteSpace(record.detectorId) &&
+                !DetectorIdsEqual(record.detectorId, sourceKey))
+            {
+                staleIds.Add(record.detectorId);
+            }
+        }
+
+        for (int i = 0; i < staleIds.Count; i++)
+            coordinateDatabase.RemoveCoordinate(staleIds[i]);
+
+        if (staleIds.Count > 0)
+            Debug.LogWarning($"[DetectorWorldMarkerManager] Removed {staleIds.Count} saved record(s) keyed by sticker text; only '{sourceKey}' is kept.");
     }
 
     private void LoadSavedCoordinatesWithoutAnchors()

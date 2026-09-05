@@ -9,6 +9,10 @@
 /Packages/com.mibdev.fullscreen-editor/
 Assets/ShaderHistory/
 
+# Personal Unity device tests
+/Assets/PersonalTests/
+/Assets/PersonalTests.meta
+
 # Visual Studio / Rider / VSCode
 .vs/
 .idea/
@@ -43,4 +47,3 @@ UnityDebugUpload/
 # Claude Code
 .claude/
 plans/
-

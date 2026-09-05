@@ -24,7 +24,7 @@ The sphere material uses `Assets/Resources/RadVisDetectorTransparent.shader`, a 
 
 ## 2. Architecture
 
-Fifteen scripts under `Assets/Scripts/` plus one debug probe, all `MonoBehaviour`s. Where each lives: `RadiationReceiver`, `QRScanner`, `DetectorWorldMarkerManager`, `DetectorCoordinateDatabase`, `DetectorSpatialAnchorManager`, `ARDetectorHud`, `HeadLockedCanvas`, `XREALCaptureManager`, and `UnityMainThreadDispatcher` are components in `HelloMR.unity`; `BeamProControllerBridge` and `ControllerPanelEditorLayout` sit on the virtual controller prefab of section 7; `RoomCoordinateSystem` and `DetectorControllerInteractor` are added at runtime by `DetectorWorldMarkerManager` when missing, which also adds the HUD and the database if they are absent; `FlyCameraRig` is only in the editor scenes; `TestButton` is referenced by nothing.
+Fourteen scripts under `Assets/Scripts/`, all `MonoBehaviour`s. Where each lives: `RadiationReceiver`, `QRScanner`, `DetectorWorldMarkerManager`, `DetectorCoordinateDatabase`, `DetectorSpatialAnchorManager`, `ARDetectorHud`, `HeadLockedCanvas`, `XREALCaptureManager`, and `UnityMainThreadDispatcher` are components in `HelloMR.unity`; `BeamProControllerBridge` and `ControllerPanelEditorLayout` sit on the virtual controller prefab of section 7; `RoomCoordinateSystem` and `DetectorControllerInteractor` are added at runtime by `DetectorWorldMarkerManager` when missing, which also adds the HUD and the database if they are absent; `FlyCameraRig` is only in the editor scenes.
 
 | Script | Responsibility |
 |---|---|
@@ -42,12 +42,10 @@ Fifteen scripts under `Assets/Scripts/` plus one debug probe, all `MonoBehaviour
 | `XREALCaptureManager` | photo and video capture through the XREAL camera API |
 | `UnityMainThreadDispatcher` | queue for callbacks that arrive off the main thread |
 | `FlyCameraRig` | editor free camera |
-| `TestButton` | debug stub |
-| `Debug/ControllerHoverProbe` | read-only logging probe |
 
 Managers find each other through `static event`s, subscribed in `OnEnable` and released in `OnDisable`, plus Inspector references on the bridge and the marker manager. The static events:
 
-- `QRScanner.OnQRDetectedDetailed(text, image center, pixel size)` and `QRScanner.OnScanStarted` go to `RoomCoordinateSystem` and `DetectorWorldMarkerManager`. The two listeners split on the text: `ROOM_ORIGIN` goes to the room frame, any other text starts a Placement.
+- `QRScanner.OnQRDetectedDetailed(text, image center, pixel size)` and `QRScanner.OnScanStarted` go to `RoomCoordinateSystem` and `DetectorWorldMarkerManager`. The two listeners split on the text: `ROOM_ORIGIN` goes to the room frame, any other text starts a Placement of the one sphere keyed `sourceMarkerKey`. The panel's Add Source button starts the same Placement through `TryBeginSourcePlacement` without the scanner.
 - `RadiationReceiver.OnRadiationDataReceived` and `OnServerConnectionChanged` go to `DetectorWorldMarkerManager`.
 - `RadiationReceiver.OnServerStatusChanged`, `OnRadiationDataReceived`, and `OnRadiationDataFreshnessChanged` go to `ARDetectorHud`.
 - All five receiver events (`OnServerStatusChanged`, `OnDisplayTextChanged`, `OnServerConnectionChanged`, `OnRadiationDataFreshnessChanged`, `OnRadiationDataReceived`), `RoomCoordinateSystem.RoomStatusChanged`, and `XREALCaptureManager.OnCaptureStateChanged` go to `BeamProControllerBridge` for its labels.
@@ -79,7 +77,7 @@ Beam Pro panel (XREALVirtualController_custom prefab) --> BeamProControllerBridg
 - Threading: NativeWebSocket callbacks are queued to the main thread through `UnityMainThreadDispatcher`, and `DispatchMessageQueue()` runs in `Update`.
 - Freshness: a reading update counts as fresh for 5 s (`maximumDataSilenceSeconds`); the receiver raises `OnRadiationDataFreshnessChanged` when that flips. The marker manager applies the same 5 s window again (`maximumRadiationSnapshotAgeSeconds`).
 - Reconnect: at launch and on return from the background, the saved server is reconnected after a 0.35 s delay; after a failed attempt or a drop, retries start at 2 s and double up to 15 s; each attempt times out after 10 s.
-- After a manual connect the QR camera starts by itself 0.3 s later (`startQrCameraAfterConnect`); a restored connection at launch does not start it. The scene has `openKeyboardOnStart` off.
+- After a manual connect the QR camera starts by itself 0.3 s later when `startQrCameraAfterConnect` is on; `HelloMR` has it off. A restored connection at launch never starts it. The scene has `openKeyboardOnStart` off.
 - Nothing is sent to the server after the handshake.
 - Test server: `mock_radvis_server.py`, a Python `websockets` script kept outside the repository, port 5002, pushes the same three-detector reading update once per second and has a self-test mode. The real server's rate and format are TBD-7.
 
@@ -103,15 +101,15 @@ At "Place Room" the gaze hit point on the wall becomes the origin. Up is world u
 
 ### How the sphere is drawn
 
-`GameObject.CreatePrimitive(PrimitiveType.Sphere)` scaled to 20 cm, with a material on the dedicated transparent shader at alpha 0.18, colored by the thresholds in `SPEC.md` 3.4 (`hiddenMaxCps` 2, `greenMaxCps` 10, `dangerThresholdCps` 350) from one number per reading update, the maximum over valid entries, with no hysteresis and no smoothing. Falloff shells are further sphere primitives around it: for each level boundary, the radius at which the current CPS would fall to that boundary by the inverse-square law from a reference distance of 8 cm, out to 5 m, at most 3 shells, alpha 0.012. The per-sphere label is off in the scene; the HUD carries the text instead.
+`GameObject.CreatePrimitive(PrimitiveType.Sphere)` scaled to 20 cm, with a material on the dedicated transparent shader at alpha 0.18, colored by the thresholds in `SPEC.md` 3.4 (`hiddenMaxCps` 2, `greenMaxCps` 10, `dangerThresholdCps` 350) from one number per reading update, the maximum over valid entries, with no hysteresis and no smoothing. Falloff shells are further sphere primitives around it: for each level boundary, the radius at which the current CPS would fall to that boundary by the inverse-square law from a reference distance of 8 cm, out to 5 m, at most 3 shells, alpha 0.012. The per-sphere label is off in the scene; the HUD carries the text instead. Four private properties of `MeshFilter`, `MeshRenderer`, `SphereCollider`, and `BoxCollider` in the marker manager keep those types out of engine code stripping, which the Unity manual requires for `CreatePrimitive` in a stripped build.
 
 ### When the sphere is allowed to show
 
-For a placed sphere, three gates are all required: server connected, a reading update younger than the 5 s window with at least one valid entry, and room frame set this launch. The preview sphere skips all three. Failing a gate hides the placed sphere.
+For a placed sphere, three gates are all required: server connected, a reading update younger than the 5 s window with at least one valid entry, and, while the room requirement setting is on, room frame set this launch. In `HelloMR` that setting is off, so the third gate always passes. The preview sphere skips all three. Failing a gate hides the placed sphere.
 
-### Rescan
+### Starting a Placement again
 
-Scanning the same sticker text again updates the existing sphere (`updateExistingMarkerOnRescan`), without smoothing. A different text creates another sphere, because the text is the sphere's key and HUD label; see section 10.
+Every Add Source tap, and every sticker scan in the wall QR flow, targets the one sphere keyed `sourceMarkerKey` ("SOURCE" by default); the sticker text is never a key. Starting a Placement while the sphere is placed snapshots its pose so Cancel restores it (`updateExistingMarkerOnRescan`), without smoothing. On start, records in the save file whose id is not that key are deleted, so a device that still holds an older file keyed by sticker text does not bring extra spheres back.
 
 ## 6. Persistence and restore
 
@@ -121,19 +119,19 @@ Scanning the same sticker text again updates the existing sphere (`updateExistin
 
 ### Three restore layers
 
-1. Session world pose. Valid only inside the launch that made it. Not used for restore while anchors are on, and never used for a record that has a room pose.
+1. Session world pose. Valid only inside the launch that made it. Loaded at start only when `loadSavedCoordinatesOnStart` is on and anchors are off, never for a record that has a room pose; in `HelloMR` the load is off.
 2. Room-relative pose. Positions are saved relative to the room frame and re-created at the next "Place Room". This is the layer the build relies on.
-3. Spatial anchors. In the scene anchors are on: `useSpatialAnchors`, `createSpatialAnchorOnQr`, `parentMarkerToAnchor`, and `loadAnchorsOnStart` are all 1, although the script defaults are off. With the room frame set, no anchor is created: `FinalizeSpatialBinding` saves the room-relative pose and returns before the anchor code, so in the wall flow this layer never holds anything. An anchor is created only for a Placement made without a room frame (room requirement off): an `ARAnchor` through `ARAnchorManager`, saved after 0.5 s through the XREAL anchor persistence (up to 3 attempts, 2 s apart), the old anchor erased on rescan. On start, after a 1 s delay and up to 8 s waiting for the anchor subsystem, every record with a saved anchor GUID is loaded, and the code follows the XREAL Anchors sample by waiting up to 30 s for a loaded anchor to report tracking before using it. A loaded anchor whose record also has a room pose is ignored. The XREAL documentation says to look around before saving so the anchor has enough feature points; the build does not enforce a duration.
+3. Spatial anchors. In `HelloMR` this layer is off: `useSpatialAnchors` is 0 on the marker manager and `loadAnchorsOnStart` is 0 on the anchor manager, so no anchor is created or loaded; `createSpatialAnchorOnQr` and `parentMarkerToAnchor` are still 1 and do nothing without them. With it on and the room frame set, no anchor is created: `FinalizeSpatialBinding` saves the room-relative pose and returns before the anchor code. With it on and no room frame, a Placement creates one: an `ARAnchor` through `ARAnchorManager`, saved after 0.5 s through the XREAL anchor persistence (up to 3 attempts, 2 s apart), the old anchor erased on rescan. On start, after a 1 s delay and up to 8 s waiting for the anchor subsystem, every record with a saved anchor GUID is loaded, and the code follows the XREAL Anchors sample by waiting up to 30 s for a loaded anchor to report tracking before using it. A loaded anchor whose record also has a room pose is ignored. The XREAL documentation says to look around before saving so the anchor has enough feature points; the build does not enforce a duration.
 
-Background resume: `RoomCoordinateSystem` drops the frame when the app returns from the background (`invalidateCalibrationOnApplicationResume`), so `ROOM_ORIGIN` has to be scanned again.
+Background resume: `RoomCoordinateSystem` drops the frame and destroys every placed sphere when the app returns from the background (`invalidateCalibrationOnApplicationResume`), whether or not a frame existed, so the Operator places the Source Marker again, or scans `ROOM_ORIGIN` again with the room requirement on.
 
-If the room requirement setting (`requireRoomCalibrationBeforeDetectorPlacement`) is switched off: a Detector sticker works without `ROOM_ORIGIN`, the room gate passes, layer 2 restore still waits for "Place Room", the server and data gates still apply, and placements made without a room frame have no room pose, so their anchors are honored. That is the anchors option of TBD-3; it also needs a clean coordinate file on the device.
+`HelloMR` runs with the room requirement off: `requireRoomCalibrationBeforeDetectorPlacement` 0, `useSpatialAnchors` 0, and `loadSavedCoordinatesOnStart` 0 on the marker manager, `loadAnchorsOnStart` 0 on the anchor manager, `startQrCameraAfterConnect` 0 on the receiver. Add Source works without `ROOM_ORIGIN`, the room gate passes, nothing is restored at start, no anchor is created, no camera opens after connecting, and each launch begins with a Placement (SPEC 3.3). The save file is still written at each Place. Turning the room requirement back on restores the wall QR flow of the paragraphs above: the sphere is saved room-relative and returns at "Place Room"; that flow also needs a clean coordinate file on the device.
 
 ## 7. Panel, HUD, pointer, capture
 
 ### Beam Pro panel
 
-The panel is the XREAL virtual controller prefab, customized as `Assets/Prefabs/XREAL/XREALVirtualController_custom.prefab` and set as the virtual controller in the XREAL settings, so it appears on the Beam Pro's screen. Its Unity UI elements (a TextMesh Pro input field, texts, three workflow Buttons: Scan, Place, Cancel, and the Record and photo Buttons) are wired to `BeamProControllerBridge`, which owns the button labels, the workflow guide (a capitalized next step with an instruction line), the detector list text, and the enable states: Scan needs the receiver and the scanner present and no scan, capture, or pending placement in progress; Place needs a valid preview; Cancel is enabled during a scan or a pending placement, or when a placed sphere can be removed. There is no Connect button: `StartQrScan` connects first when there is no connection, and finishing the address field's edit also connects. `ControllerPanelEditorLayout` stands in for the XREAL layout script in the editor only.
+The panel is the XREAL virtual controller prefab, customized as `Assets/Prefabs/XREAL/XREALVirtualController_custom.prefab` and set as the virtual controller in the XREAL settings, so it appears on the Beam Pro's screen. Its Unity UI elements (a TextMesh Pro input field, texts, three workflow Buttons: Scan, Place, Cancel, and the Record and photo Buttons) are wired to `BeamProControllerBridge`, which owns the button labels, the workflow guide (a capitalized next step with an instruction line), the detector list text, and the enable states. The first button is Add Source: with no wall QR needed it connects if needed and calls the marker manager's `TryBeginSourcePlacement`, so no camera opens; only while the room requirement setting is on and the room is not yet registered does it start the scanner, and then it needs the scanner present and no capture in progress. Place needs a valid preview. Cancel is enabled during a scan or a pending placement. The first button is disabled while the marker manager is missing, and Add Source stays available while the server is still connecting or a capture is running, since it needs neither. There is no Connect button: the first button connects first when there is no connection, and finishing the address field's edit also connects. `ControllerPanelEditorLayout` stands in for the XREAL layout script in the editor only.
 
 ### HUD
 
@@ -145,28 +143,27 @@ The panel is the XREAL virtual controller prefab, customized as `Assets/Prefabs/
 
 ### Capture
 
-`XREALCaptureManager` uses `XREALVideoCapture` and `XREALPhotoCapture` from `Unity.XR.XREAL` with the RGB camera, blend mode (camera plus virtual content), single side, no audio, black background. Because the QR scanner and the capture share the camera, capture first releases the `WebCamTexture` and waits 0.25 s. The panel's Start Record / Stop Record button and photo button call it. Video is recorded to `Application.persistentDataPath/RadVis_<date>_<time>.mp4`; a photo is written with `File.WriteAllBytes` to `Application.persistentDataPath/XrealShots/RadVis_<date>_<time>.jpg`; both are then inserted into the Android gallery.
+`XREALCaptureManager` uses `XREALVideoCapture` and `XREALPhotoCapture` from `Unity.XR.XREAL` with the RGB camera, blend mode (camera plus virtual content), single side, no audio, black background. Because the QR scanner and the capture share the camera, capture first releases the `WebCamTexture` and waits 0.25 s. The panel's Start Record / Stop Record button and photo button call it. Video is recorded to `Application.persistentDataPath/RadVis_<date>_<time>.mp4`; a photo is written with `File.WriteAllBytes` to `Application.persistentDataPath/XrealShots/RadVis_<date>_<time>.jpg`; both are then inserted into the Android gallery; a photo whose insert throws is still reported as saved, with a warning in the log.
 
 ## 8. Build settings and checklist
 
 Project: product name `Hello_IDCLab`, bundle version 0.2, Android minimum API 29, ARM64, IL2CPP, OpenGL ES 3, Linear color space. `Assets/Plugins/Android/AndroidManifest.xml` adds CAMERA, INTERNET, and RECORD_AUDIO; the XREAL settings add VIBRATION, RECORD_AUDIO, and CAMERA and turn on multi-resume and auto logcat. XR: the XREAL loader only (`Assets/XR/Loaders/XREALXRLoader.asset`, settings in `Assets/XR/Settings/XREALSettings.asset`). Build Profile Android; scene list `HelloMR` only.
 
-Three variants for the device day, same scene. Full and server-only are Inspector toggles; placement-only also needs a code change:
+Three variants for the device day; the two partial ones are planned as scene copies. Server-only is a component removal; placement-only also needs a code change:
 
 | Build | Settings | Notes |
 |---|---|---|
 | placement-only | leave the receiver enabled, run without a server; turn off "hide markers until server connected" and "hide markers without fresh radiation data" on the marker manager | the Scan button needs the receiver present; a failed connection attempt logs an error but does not block scanning or placing. With no reading the placed sphere's center is not drawn (section 5, "When the sphere is allowed to show"), so this variant shows the gray preview, the HUD row, and the edge indicator, but no sphere after Place, until a "no readings" appearance exists |
-| server-only | disable the marker manager component only | the HUD shares its object and stays on; the room frame object is created by the manager and disappears with it, so after connecting the guide reads "APP SETUP NOT READY" and a scan does nothing. To keep the QR camera closed, turn off "start QR camera after connect" on the receiver, which is on in the scene |
+| server-only | remove the marker manager component from the scene copy | the HUD and the anchor manager share its object and stay on. With the component missing the first button is disabled and the guide reads "APP SETUP NOT READY"; the QR camera never opens because "start QR camera after connect" is off. Disabling the component instead of removing it is not enough: the bridge still finds a disabled component, and Add Source would start a preview that never updates |
 | full | nothing | the scene as committed |
 
 Before every build:
 
-- Delete `Assets/Scripts/Debug/` with its meta file, and `Assets/Scripts/TestButton.cs`.
 - The XREAL package is referenced as a local archive outside the repository; building on another machine needs that archive at the same location or a copy inside the repo.
 - Build Profile: Android. Scene list: `HelloMR` only.
 - Laptop firewall allows inbound 5002. Beam Pro and laptop on the same Wi-Fi.
-- Print the `ROOM_ORIGIN` QR and tape it to a vertical wall at eye height. Detector stickers are already on the detectors.
-- The table top under the source and the wall carrying the QR must be surfaces the glasses can detect.
+- No QR is needed while the room requirement setting is off. With it on, print the `ROOM_ORIGIN` QR and tape it to a vertical wall at eye height.
+- The table top under the source must be a surface the glasses can detect, and the wall carrying the QR too when that setting is on.
 
 ## 9. References and examples
 
@@ -202,8 +199,6 @@ Examples the code follows or that can be run:
 
 ## 10. Gaps against SPEC.md
 
-- F-03: a second sticker creates a second sphere, because the sticker text is the sphere's key. Fix: ignore the QR text and key the one sphere on a fixed name.
 - F-07, 3.8: nothing shown depends on the wearer's distance; the wearer-to-sphere distance is already computed for the HUD row.
-- F-08: neither the wall QR restore nor anchors have run on the device.
-- X-08: `Assets/Scripts/Debug/ControllerHoverProbe.cs` and `Assets/Scripts/TestButton.cs` are in the project and would ship; only the checklist above removes them.
+- 3.3, 3.10: the Add Source flow has not run on the device; the table plane under the source is the surface it depends on.
 - 3.7: no code measures the placement error.

@@ -667,10 +667,10 @@ public class DetectorSpatialAnchorManager : MonoBehaviour
     private void EnsureReferences()
     {
         if (anchorManager == null)
-            anchorManager = FindObjectOfType<ARAnchorManager>();
+            anchorManager = FindFirstObjectByType<ARAnchorManager>();
 
         if (coordinateDatabase == null)
-            coordinateDatabase = FindObjectOfType<DetectorCoordinateDatabase>();
+            coordinateDatabase = FindFirstObjectByType<DetectorCoordinateDatabase>();
     }
 
     private string NormalizeId(string raw)

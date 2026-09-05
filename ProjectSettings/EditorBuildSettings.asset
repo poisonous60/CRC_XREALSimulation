@@ -8,6 +8,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/HelloMR.unity
     guid: 0c611a2881614c644b9df39be7bf8fe6
+  - enabled: 0
+    path: Assets/PersonalTests/6DoF/6DoFTestScene.unity
+    guid: 34e82aab9c7b2a74190a16719bc2a885
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 2e0fd753937dbc2408bf6f7a404426dd, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 289c1b55c9541489481df5cc06664110, type: 3}
