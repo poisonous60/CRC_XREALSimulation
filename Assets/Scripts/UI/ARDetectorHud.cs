@@ -53,8 +53,6 @@ public partial class ARDetectorHud : MonoBehaviour
         new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
     private readonly List<DetectorWorldMarkerManager.DetectorHudMarkerState> markerStates =
         new List<DetectorWorldMarkerManager.DetectorHudMarkerState>();
-    private readonly List<OffscreenState> offscreenStates = new List<OffscreenState>();
-    private readonly List<OffscreenIndicatorView> indicatorPool = new List<OffscreenIndicatorView>();
     private readonly StringBuilder textBuilder = new StringBuilder(512);
 
     private GameObject canvasObject;
