@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfd3f835e48bd1748a20c259102e8a4e, type: 3}
   m_Name: MarkVisualSetting
   m_EditorClassIdentifier: 
-  markerPrefab: {fileID: 6387016307566893731, guid: f2003d6915d08a442a39baa3dd841a37, type: 3}
+  markerPrefab: {fileID: 7793960699173686856, guid: b22f7029d99a7e64dae145f35935cff2, type: 3}
   markerSizeMeters: 0.2
   statusBands:
   - maxCps: 10
@@ -21,7 +21,13 @@ MonoBehaviour:
     color: {r: 1, g: 1, b: 0, a: 1}
   aboveHighestBandColor: {r: 1, g: 0, b: 0, a: 1}
   unknownColor: {r: 0.65, g: 0.65, b: 0.65, a: 1}
-  offscreenPrefab: {fileID: 0}
-  proximityPrefab: {fileID: 0}
-  showFalloffShells: 1
+  offscreenPrefab: {fileID: 4695216491298785069, guid: e1af9c7a7ac51854bb358e65528a8e05, type: 3}
+  proximityPrefabs:
+  - {fileID: 7865643288987669811, guid: 122dde21e47bb554399be3cf9bb401e0, type: 3}
+  - {fileID: 2983836566073144877, guid: 6e3223cf616fd4a4b823a9720ca97d20, type: 3}
+  showFalloffShells: 0
+  falloffReferenceDistanceMeters: 0.08
+  falloffMaxRadiusMeters: 5
+  falloffShellAlpha: 0.012
+  maxFalloffShells: 3
   showLabel: 0

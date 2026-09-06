@@ -48,12 +48,24 @@ public class MarkVisualSetting : ScriptableObject
     [SerializeField] private OffscreenIndicatorView offscreenPrefab;
 
     [Header("(c) Proximity Information")]
-    [Tooltip("Information shown as the user approaches. Empty draws nothing.")]
-    [SerializeField] private SourcePresentation proximityPrefab;
+    [Tooltip("Every look shown as the user approaches. All entries are spawned together. Empty draws nothing.")]
+    [SerializeField] private List<SourcePresentation> proximityPrefabs = new List<SourcePresentation>();
 
     [Header("Code-drawn Extras")]
     [Tooltip("Faint inverse-square shells around the marker. Drawn in code, so no prefab changes their look.")]
     [SerializeField] private bool showFalloffShells = true;
+
+    [Tooltip("Calibrated reference distance for I(r) = I0 * (reference/r)^2. At 8 cm, a 351 CPS reading produces roughly 0.47 m yellow and 1.06 m green boundaries.")]
+    [SerializeField, Min(0.01f)] private float falloffReferenceDistanceMeters = 0.08f;
+
+    [Tooltip("Maximum radius visualized around one marker.")]
+    [SerializeField, Min(0.5f)] private float falloffMaxRadiusMeters = 5f;
+
+    [Tooltip("Opacity of the outer falloff shells. Keep this very low so they do not obstruct the glasses view.")]
+    [SerializeField, Range(0.002f, 0.12f)] private float falloffShellAlpha = 0.012f;
+
+    [Tooltip("Maximum number of transition shells drawn around one marker.")]
+    [SerializeField, Range(1, 3)] private int maxFalloffShells = 3;
 
     [Tooltip("Detector name text beside the marker. Drawn in code, so no prefab changes its look.")]
     [SerializeField] private bool showLabel = false;
@@ -62,8 +74,26 @@ public class MarkVisualSetting : ScriptableObject
     public float MarkerSizeMeters => Mathf.Max(MinimumMarkerSizeMeters, markerSizeMeters);
     public Color UnknownColor => unknownColor;
     public OffscreenIndicatorView OffscreenPrefab => offscreenPrefab;
-    public SourcePresentation ProximityPrefab => proximityPrefab;
+    public IReadOnlyList<SourcePresentation> ProximityPrefabs => proximityPrefabs;
+
+    public bool HasProximityPrefab()
+    {
+        if (proximityPrefabs == null)
+            return false;
+
+        for (int index = 0; index < proximityPrefabs.Count; index++)
+        {
+            if (proximityPrefabs[index] != null)
+                return true;
+        }
+
+        return false;
+    }
     public bool ShowFalloffShells => showFalloffShells;
+    public float FalloffReferenceDistanceMeters => falloffReferenceDistanceMeters;
+    public float FalloffMaxRadiusMeters => falloffMaxRadiusMeters;
+    public float FalloffShellAlpha => falloffShellAlpha;
+    public int MaxFalloffShells => maxFalloffShells;
     public bool ShowLabel => showLabel;
 
     // Statics survive entering play mode when Reload Domain is off, so drop the cache here.

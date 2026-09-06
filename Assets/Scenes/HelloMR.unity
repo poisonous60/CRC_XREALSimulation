@@ -806,6 +806,7 @@ MonoBehaviour:
   placementOrigin: {fileID: 876944438}
   fallbackCamera: {fileID: 609993946}
   markerPrefab: {fileID: 0}
+  sourceMarkerKey: SOURCE
   usePlaneIntersectionPlacement: 1
   planeManager: {fileID: 624047417}
   planeDetectionMode: 3
@@ -816,21 +817,28 @@ MonoBehaviour:
   useCoordinateDatabase: 1
   coordinateDatabase: {fileID: 906282734}
   loadSavedCoordinatesOnStart: 0
+  enableRoomCoordinateSystem: 1
+  roomCoordinateSystem: {fileID: 0}
+  requireRoomCalibrationBeforeDetectorPlacement: 0
   useSpatialAnchors: 0
   spatialAnchorManager: {fileID: 588933902}
   createSpatialAnchorOnQr: 1
   parentMarkerToAnchor: 1
-  requireRoomCalibrationBeforeDetectorPlacement: 0
   hideMarkersUntilServerConnected: 1
+  hideMarkersWithoutFreshRadiationData: 1
+  maximumRadiationSnapshotAgeSeconds: 5
   radiationReceiver: {fileID: 2005687756}
   cancelSelectionMaxAngleDegrees: 12
   usePreviewCenterPlacement: 1
   defaultPlacementDistanceMeters: 2
   followPreviewCenterUntilPlaced: 1
-  saveCoordinateOnlyWhenPlaced: 1
   followingStateLabel: following gaze
   placedStateLabel: placed
   markerVerticalOffsetMeters: 0
+  showGrayPreviewSphere: 1
+  previewSphereColor: {r: 0.75, g: 0.75, b: 0.75, a: 1}
+  previewSphereAlpha: 0.35
+  showPreviewBeforeServerConnected: 1
   cameraHorizontalFovDegrees: 70
   cameraVerticalFovDegrees: 50
   useQrSizeToEstimateDistance: 0
@@ -845,16 +853,11 @@ MonoBehaviour:
   fixedMarkerSize: 0.2
   markerAlpha: 0.18
   forceDedicatedTransparentShader: 1
-  showFalloffShells: 1
-  falloffReferenceDistanceMeters: 0.08
-  falloffMaxRadiusMeters: 5
-  falloffShellAlpha: 0.012
-  maxFalloffShells: 3
+  enableArGlassesHud: 1
+  arGlassesHud: {fileID: 588933901}
   showLabel: 0
   showDistanceInLabel: 1
   showAnchorStateInLabel: 1
-  enableArGlassesHud: 1
-  arGlassesHud: {fileID: 588933901}
   labelCameraOffsetMeters: {x: 0.16, y: -0.13, z: -0.01}
   labelWorldScale: 0.04
   labelFontSize: 4.5
@@ -863,6 +866,15 @@ MonoBehaviour:
   hiddenMaxCps: 2
   greenMaxCps: 10
   dangerThresholdCps: 350
+  enableControllerDetectorReposition: 1
+  detectorControllerInteractor: {fileID: 0}
+  controllerSelectionMaxDistanceMeters: 10
+  controllerSelectionAngleDegrees: 1.5
+  controllerSelectionRadiusMultiplier: 1.25
+  controllerHoverHighlightBlend: 0.2
+  controllerHoverAlphaBoost: 0.08
+  controllerMoveHighlightBlend: 0.32
+  controllerMoveAlphaBoost: 0.14
 --- !u!4 &588933900
 Transform:
   m_ObjectHideFlags: 0
@@ -898,9 +910,10 @@ MonoBehaviour:
   hudPixelSize: {x: 720, y: 430}
   hudFontSize: 27
   radiationUnit: CPS
+  distanceUnit: m
+  maxVisibleDetectorRows: 9
   gazeSelectionAngleDegrees: 8
   screenEdgeMargin: 0.05
-  indicatorFontSize: 28
 --- !u!114 &588933902
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -911,8 +924,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b578e87efa6717944a9330920c34ffbc, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   anchorManager: {fileID: 624047415}
   coordinateDatabase: {fileID: 906282734}
   saveDelaySeconds: 0.5
@@ -1237,6 +1250,8 @@ MonoBehaviour:
   savePrettyJson: 1
   logSavePathOnStart: 1
   autoSaveAfterEachChange: 1
+  radiationSaveMinimumIntervalSeconds: 1
+  saveFailureRetryDelaySeconds: 2
 --- !u!4 &906282735
 Transform:
   m_ObjectHideFlags: 0
@@ -2010,6 +2025,7 @@ MonoBehaviour:
   statusText: {fileID: 0}
   defaultIp: 192.168.0.60
   serverPort: 5002
+  maximumDataSilenceSeconds: 5
   autoReconnectSavedServer: 1
   automaticReconnectStartDelay: 0.35
   automaticReconnectInitialRetryDelay: 2
@@ -2026,13 +2042,13 @@ MonoBehaviour:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 298894145}
   - {fileID: 694392833}
+  - {fileID: 298894145}
   - {fileID: 1279313426}
-  - {fileID: 2005687755}
   - {fileID: 697720431}
   - {fileID: 732363536}
   - {fileID: 588933900}
   - {fileID: 906282735}
+  - {fileID: 2005687755}
   - {fileID: 1423238746}
   - {fileID: 145385456}

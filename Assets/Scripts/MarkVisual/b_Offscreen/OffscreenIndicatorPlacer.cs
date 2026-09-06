@@ -161,6 +161,13 @@ public class OffscreenIndicatorPlacer
         indicator.Show(state.marker.detectorId, state.direction, state.marker.color);
 
         RectTransform rect = (RectTransform)indicator.transform;
+
+        if (indicator.UsesEllipseClamp)
+        {
+            PlaceOnEllipse(indicator, rect, state, stackIndex);
+            return;
+        }
+
         float stackOffset = AlternatingStackOffset(stackIndex, 0.055f);
         Vector2 anchor;
 
@@ -200,6 +207,63 @@ public class OffscreenIndicatorPlacer
         rect.anchorMin = anchor;
         rect.anchorMax = anchor;
         rect.anchoredPosition = Vector2.zero;
+    }
+
+    private void PlaceOnEllipse(
+        OffscreenIndicatorView indicator,
+        RectTransform rect,
+        OffscreenState state,
+        int stackIndex)
+    {
+        Vector2 fromCenter = new Vector2(state.viewport.x - 0.5f, state.viewport.y - 0.5f);
+
+        if (state.viewport.z <= 0f)
+            fromCenter = -fromCenter;
+
+        if (fromCenter.sqrMagnitude < 0.000001f)
+            fromCenter = new Vector2(0f, -1f);
+
+        fromCenter.Normalize();
+        fromCenter = RotateDegrees(fromCenter, AlternatingStackOffset(stackIndex, 7f));
+
+        float semiAxis = Mathf.Max(0.01f, 0.5f - screenEdgeMargin);
+        Vector2 center = new Vector2(0.5f, 0.5f);
+        Vector2 anchor = center + fromCenter * semiAxis;
+
+        if (anchor.x > 0.5f)
+            anchor.y = Mathf.Max(anchor.y, hudAvoidanceTop);
+
+        if (anchor.y < 0.5f)
+            anchor.x = Mathf.Min(anchor.x, hudAvoidanceLeft);
+
+        Vector2 corrected = anchor - center;
+        if (corrected.sqrMagnitude > 0.000001f)
+            anchor = center + corrected.normalized * semiAxis;
+
+        anchor.x = Mathf.Clamp(anchor.x, screenEdgeMargin, 1f - screenEdgeMargin);
+        anchor.y = Mathf.Clamp(anchor.y, screenEdgeMargin, 1f - screenEdgeMargin);
+
+        rect.anchorMin = anchor;
+        rect.anchorMax = anchor;
+        rect.anchoredPosition = Vector2.zero;
+
+        float aspect = targetCamera != null && targetCamera.aspect > 0f ? targetCamera.aspect : 1f;
+        Vector2 screenDirection = new Vector2(fromCenter.x * aspect, fromCenter.y);
+        indicator.SetDirection(Mathf.Atan2(screenDirection.y, screenDirection.x) * Mathf.Rad2Deg);
+    }
+
+    private static Vector2 RotateDegrees(Vector2 direction, float degrees)
+    {
+        if (Mathf.Approximately(degrees, 0f))
+            return direction;
+
+        float radians = degrees * Mathf.Deg2Rad;
+        float cos = Mathf.Cos(radians);
+        float sin = Mathf.Sin(radians);
+
+        return new Vector2(
+            direction.x * cos - direction.y * sin,
+            direction.x * sin + direction.y * cos);
     }
 
     private float AlternatingStackOffset(int index, float step)

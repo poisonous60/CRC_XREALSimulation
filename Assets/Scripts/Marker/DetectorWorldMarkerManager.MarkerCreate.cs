@@ -25,11 +25,14 @@ public partial class DetectorWorldMarkerManager
             visualSettings.hiddenMaxCps = hiddenMaxCps;
             visualSettings.greenMaxCps = greenMaxCps;
             visualSettings.dangerThresholdCps = dangerThresholdCps;
-            visualSettings.showFalloffShells = showFalloffShells;
-            visualSettings.falloffReferenceDistanceMeters = falloffReferenceDistanceMeters;
-            visualSettings.falloffMaxRadiusMeters = falloffMaxRadiusMeters;
-            visualSettings.falloffShellAlpha = falloffShellAlpha;
-            visualSettings.maxFalloffShells = maxFalloffShells;
+            if (MarkVisualSetting.TryLoad(out MarkVisualSetting markVisualSetting))
+            {
+                visualSettings.showFalloffShells = markVisualSetting.ShowFalloffShells;
+                visualSettings.falloffReferenceDistanceMeters = markVisualSetting.FalloffReferenceDistanceMeters;
+                visualSettings.falloffMaxRadiusMeters = markVisualSetting.FalloffMaxRadiusMeters;
+                visualSettings.falloffShellAlpha = markVisualSetting.FalloffShellAlpha;
+                visualSettings.maxFalloffShells = markVisualSetting.MaxFalloffShells;
+            }
             visualSettings.showLabel = showLabel;
             visualSettings.labelFontSize = labelFontSize;
             visualSettings.labelOutlineWidth = labelOutlineWidth;
@@ -108,7 +111,7 @@ public partial class DetectorWorldMarkerManager
 
         root.name = $"DetectorMarker_{detectorId}";
 
-        if (visualSetting != null && visualSetting.ProximityPrefab != null)
+        if (visualSetting != null && visualSetting.HasProximityPrefab())
             root.AddComponent<SourcePresentationHost>();
 
         root.transform.position = worldPosition;

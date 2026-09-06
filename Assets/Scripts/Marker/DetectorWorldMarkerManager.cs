@@ -150,26 +150,6 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
     [Tooltip("Use the included line-free transparent volume shader for consistent XREAL rendering.")]
     [SerializeField] private bool forceDedicatedTransparentShader = true;
 
-    [Header("Inverse-Square Falloff Visualization")]
-    [Tooltip("Show very faint inverse-square approach zones. This is a relative visual guide; source geometry, shielding, and detector calibration still determine the real safe distance.")]
-    [SerializeField] private bool showFalloffShells = true;
-
-    [Tooltip("Calibrated reference distance for I(r) = I0 * (reference/r)^2. At 8 cm, a 351 CPS reading produces roughly 0.47 m yellow and 1.06 m green boundaries.")]
-    [SerializeField, Min(0.01f)] private float falloffReferenceDistanceMeters = 0.08f;
-
-    [Tooltip("Maximum radius visualized around one detector.")]
-    [SerializeField, Min(0.5f)] private float falloffMaxRadiusMeters = 5.0f;
-
-    [Tooltip("Opacity of outer falloff spheres. Keep this very low so they do not obstruct the glasses view.")]
-    [SerializeField, Range(0.002f, 0.12f)] private float falloffShellAlpha = 0.012f;
-
-    [Tooltip("Maximum number of transition/boundary shells per detector.")]
-    [SerializeField, Range(1, 3)] private int maxFalloffShells = 3;
-
-    [SerializeField] private bool showLabel = false;
-    [SerializeField] private bool showDistanceInLabel = true;
-    [SerializeField] private bool showAnchorStateInLabel = true;
-
     [Header("AR Glasses HUD")]
     [Tooltip("Creates a head-locked server/device HUD and off-screen detector arrows automatically.")]
     [SerializeField] private bool enableArGlassesHud = true;
@@ -178,6 +158,10 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
     [SerializeField] private ARDetectorHud arGlassesHud;
 
     [Header("Marker Label")]
+    [SerializeField] private bool showLabel = false;
+    [SerializeField] private bool showDistanceInLabel = true;
+    [SerializeField] private bool showAnchorStateInLabel = true;
+
     [Tooltip("Camera-relative world offset from the sphere center. Positive X is screen-right and negative Y is screen-down.")]
     [SerializeField] private Vector3 labelCameraOffsetMeters = new Vector3(0.16f, -0.13f, -0.01f);
 
@@ -252,7 +236,6 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
         if (MarkVisualSetting.TryLoad(out MarkVisualSetting presentationConfig))
         {
             fixedMarkerSize = presentationConfig.MarkerSizeMeters;
-            showFalloffShells = presentationConfig.ShowFalloffShells;
             showLabel = presentationConfig.ShowLabel;
         }
 

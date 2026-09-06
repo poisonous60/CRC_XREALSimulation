@@ -1,7 +1,8 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Spawns the proximity presentation named by MarkVisualSetting.
+/// Spawns every proximity presentation named by MarkVisualSetting.
 /// </summary>
 [DisallowMultipleComponent]
 public class SourcePresentationHost : MonoBehaviour
@@ -13,9 +14,9 @@ public class SourcePresentationHost : MonoBehaviour
     [Tooltip("Head camera the presentations project against. Empty means Camera.main.")]
     [SerializeField] private Camera head;
 
-    public SourcePresentation Proximity => spawnedProximity;
+    public IReadOnlyList<SourcePresentation> Proximity => spawnedProximity;
 
-    private SourcePresentation spawnedProximity;
+    private readonly List<SourcePresentation> spawnedProximity = new List<SourcePresentation>();
 
     private void Start()
     {
@@ -38,7 +39,16 @@ public class SourcePresentationHost : MonoBehaviour
             return;
         }
 
-        spawnedProximity = Spawn(config.ProximityPrefab, "Proximity");
+        IReadOnlyList<SourcePresentation> prefabs = config.ProximityPrefabs;
+        if (prefabs == null)
+            return;
+
+        for (int index = 0; index < prefabs.Count; index++)
+        {
+            SourcePresentation spawned = Spawn(prefabs[index], $"Proximity{index}");
+            if (spawned != null)
+                spawnedProximity.Add(spawned);
+        }
     }
 
     private SourcePresentation Spawn(SourcePresentation prefab, string role)
