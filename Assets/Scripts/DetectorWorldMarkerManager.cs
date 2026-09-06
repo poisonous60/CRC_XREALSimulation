@@ -142,7 +142,7 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
     [Header("Marker Visual")]
     [Tooltip("Fixed world scale of every detector sphere. Radiation value changes color only, not size.")]
-    [SerializeField] private float fixedMarkerSize = 0.20f;
+    [SerializeField, Min(0.001f)] private float fixedMarkerSize = 0.20f;
 
     [Tooltip("Opacity of the line-free center detector sphere.")]
     [SerializeField, Range(0.02f, 0.8f)] private float markerAlpha = 0.18f;
@@ -265,6 +265,12 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         lastRadiationSnapshotTime = float.NegativeInfinity;
         liveRadiationDetectorIds.Clear();
         latestAggregateRadiationValue = -1f;
+
+        if (SourcePresentationConfig.TryLoad(out SourcePresentationConfig presentationConfig))
+            fixedMarkerSize = presentationConfig.MarkerSizeMeters;
+
+        fixedMarkerSize = Mathf.Max(0.001f, fixedMarkerSize);
+
         QRScanner.OnScanStarted += NotifyQrScanStarted;
         QRScanner.OnQRDetectedDetailed += HandleQrDetected;
         RadiationReceiver.OnRadiationDataReceived += HandleRadiationDataReceived;
@@ -2413,8 +2419,16 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
         Transform markerParent = parent != null && parentMarkerToAnchor ? parent : transform;
 
-        GameObject root = markerPrefab != null
-            ? Instantiate(markerPrefab, worldPosition, Quaternion.identity, markerParent)
+        GameObject prefab = markerPrefab;
+
+        if (prefab == null &&
+            SourcePresentationConfig.TryLoad(out SourcePresentationConfig presentationConfig))
+        {
+            prefab = presentationConfig.MarkerPrefab;
+        }
+
+        GameObject root = prefab != null
+            ? Instantiate(prefab, worldPosition, Quaternion.identity, markerParent)
             : CreateDefaultSphere(worldPosition, markerParent);
 
         root.name = $"DetectorMarker_{detectorId}";
@@ -2451,6 +2465,15 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         ForceMarkerVisible(info);
         UpdateMarkerVisual(info, info.lastRadiationValue);
         return info;
+    }
+
+    private bool HasMarkerPrefab()
+    {
+        if (markerPrefab != null)
+            return true;
+
+        return SourcePresentationConfig.TryLoad(out SourcePresentationConfig presentationConfig)
+            && presentationConfig.MarkerPrefab != null;
     }
 
     private GameObject CreateDefaultSphere(Vector3 position, Transform parent)
@@ -2619,18 +2642,29 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
     private Color GetRiskColor(float radiationValue)
     {
+        if (SourcePresentationConfig.TryLoad(out SourcePresentationConfig presentationConfig) &&
+            presentationConfig.TryGetStatusColor(radiationValue, out Color bandColor))
+        {
+            return ToMarkerColor(bandColor);
+        }
+
         switch (GetRiskBand(radiationValue))
         {
             case RadiationRiskBand.Green:
             case RadiationRiskBand.Hidden:
-                return new Color(0.0f, 1.0f, 0.0f, markerAlpha);
+                return ToMarkerColor(new Color(0.0f, 1.0f, 0.0f));
             case RadiationRiskBand.Yellow:
-                return new Color(1.0f, 1.0f, 0.0f, markerAlpha);
+                return ToMarkerColor(new Color(1.0f, 1.0f, 0.0f));
             case RadiationRiskBand.Red:
-                return new Color(1.0f, 0.0f, 0.0f, markerAlpha);
+                return ToMarkerColor(new Color(1.0f, 0.0f, 0.0f));
             default:
-                return new Color(0.65f, 0.65f, 0.65f, markerAlpha);
+                return ToMarkerColor(new Color(0.65f, 0.65f, 0.65f));
         }
+    }
+
+    private Color ToMarkerColor(Color rgb)
+    {
+        return new Color(rgb.r, rgb.g, rgb.b, markerAlpha);
     }
 
     private RadiationRiskBand GetRiskBand(float radiationValue)
@@ -2864,11 +2898,11 @@ public class DetectorWorldMarkerManager : MonoBehaviour
         switch (band)
         {
             case RadiationRiskBand.Red:
-                return Color.red;
+                return GetRiskColor(Mathf.Max(0f, dangerThresholdCps) + 1f);
             case RadiationRiskBand.Yellow:
-                return Color.yellow;
+                return GetRiskColor(Mathf.Max(0f, greenMaxCps) + 1f);
             default:
-                return Color.green;
+                return GetRiskColor(Mathf.Max(0f, greenMaxCps));
         }
     }
 
@@ -2998,7 +3032,8 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
         Material material = renderer.material;
 
-        if (forceDedicatedTransparentShader)
+        // A supplied marker prefab carries its own shader, so the forced swap would undo it.
+        if (forceDedicatedTransparentShader && !HasMarkerPrefab())
         {
             Shader transparentShader = GetDetectorTransparentShader();
             if (transparentShader != null && material.shader != transparentShader)
