@@ -2419,19 +2419,24 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
         Transform markerParent = parent != null && parentMarkerToAnchor ? parent : transform;
 
+        SourcePresentationConfig.TryLoad(out SourcePresentationConfig presentationConfig);
+
         GameObject prefab = markerPrefab;
 
-        if (prefab == null &&
-            SourcePresentationConfig.TryLoad(out SourcePresentationConfig presentationConfig))
-        {
+        if (prefab == null && presentationConfig != null)
             prefab = presentationConfig.MarkerPrefab;
-        }
 
         GameObject root = prefab != null
             ? Instantiate(prefab, worldPosition, Quaternion.identity, markerParent)
             : CreateDefaultSphere(worldPosition, markerParent);
 
         root.name = $"DetectorMarker_{detectorId}";
+
+        if (presentationConfig != null &&
+            (presentationConfig.OffscreenPrefab != null || presentationConfig.ProximityPrefab != null))
+        {
+            root.AddComponent<SourcePresentationHost>();
+        }
         root.transform.position = worldPosition;
         root.transform.localScale = Vector3.one * fixedMarkerSize;
 
