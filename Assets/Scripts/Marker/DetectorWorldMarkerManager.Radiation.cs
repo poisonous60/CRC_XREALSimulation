@@ -1,12 +1,9 @@
-using System;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
-using UnityEngine.XR.ARFoundation;
-using UnityEngine.XR.ARSubsystems;
 
 public partial class DetectorWorldMarkerManager
 {
+    private readonly RadiationSnapshot radiationSnapshot = new RadiationSnapshot();
 
     private void HandleServerConnectionChanged(bool connected)
     {
@@ -18,21 +15,9 @@ public partial class DetectorWorldMarkerManager
         if (!connected)
             AbortControllerDetectorInteraction(true);
 
-        bool changed = serverConnected != connected;
-        serverConnected = connected;
+        bool changed = radiationSnapshot.SetServerConnection(connected);
 
-        if (changed)
-        {
-            // A snapshot from the previous WebSocket generation must never make
-            // restored detector values look live on the replacement connection.
-            hasReceivedRadiationSnapshot = false;
-            lastSnapshotFreshnessState = false;
-            lastRadiationSnapshotTime = float.NegativeInfinity;
-            liveRadiationDetectorIds.Clear();
-            latestAggregateRadiationValue = -1f;
-        }
-
-        foreach (var pair in markers)
+        foreach (KeyValuePair<string, SourceMarker> pair in markers)
             ApplyMarkerVisibility(pair.Value);
 
         if (changed)
@@ -49,34 +34,12 @@ public partial class DetectorWorldMarkerManager
         if (data == null)
             return;
 
-        hasReceivedRadiationSnapshot = true;
-        lastRadiationSnapshotTime = Time.unscaledTime;
-        liveRadiationDetectorIds.Clear();
-
-        float maximumValue = -1f;
-        foreach (var kvp in data)
-        {
-            string detectorId = NormalizeDetectorId(kvp.Key);
-
-            if (string.IsNullOrEmpty(detectorId) ||
-                kvp.Value < 0f ||
-                float.IsNaN(kvp.Value) ||
-                float.IsInfinity(kvp.Value))
-            {
-                continue;
-            }
-
-            liveRadiationDetectorIds.Add(detectorId);
-            if (kvp.Value > maximumValue)
-                maximumValue = kvp.Value;
-        }
-
-        latestAggregateRadiationValue = maximumValue;
+        float maximumValue = radiationSnapshot.Ingest(data);
 
         // Temporary: every sphere shows the maximum of all live sensors until the aggregation rule is decided.
         if (maximumValue >= 0f)
         {
-            foreach (var pair in markers)
+            foreach (KeyValuePair<string, SourceMarker> pair in markers)
             {
                 UpdateMarkerVisual(pair.Value, maximumValue);
                 if (useCoordinateDatabase && coordinateDatabase != null)
@@ -84,18 +47,18 @@ public partial class DetectorWorldMarkerManager
             }
         }
 
-        lastSnapshotFreshnessState = IsRadiationSnapshotFresh();
+        radiationSnapshot.RememberFreshness(IsRadiationSnapshotFresh());
 
         // A complete server snapshot can omit a detector that was present in the
         // preceding snapshot. Re-evaluate every marker so that detector is hidden.
-        foreach (var pair in markers)
+        foreach (KeyValuePair<string, SourceMarker> pair in markers)
             ApplyMarkerVisibility(pair.Value);
     }
 
     private float GetLatestRadiationValue(string detectorId, float fallbackValue)
     {
-        return IsRadiationSnapshotFresh() && latestAggregateRadiationValue >= 0f
-            ? latestAggregateRadiationValue
+        return IsRadiationSnapshotFresh() && radiationSnapshot.LatestAggregateValue >= 0f
+            ? radiationSnapshot.LatestAggregateValue
             : fallbackValue;
     }
 }

@@ -201,11 +201,7 @@ public partial class DetectorWorldMarkerManager
         activePlacementSession = null;
         lastInteractedDetectorId = "";
 
-        hasReceivedRadiationSnapshot = false;
-        lastSnapshotFreshnessState = false;
-        lastRadiationSnapshotTime = float.NegativeInfinity;
-        liveRadiationDetectorIds.Clear();
-        latestAggregateRadiationValue = -1f;
+        radiationSnapshot.Reset();
 
         Debug.LogWarning(
             $"[DetectorWorldMarkerManager] Room localization invalidated; " +

@@ -45,7 +45,7 @@ public partial class DetectorWorldMarkerManager
         bool previewIgnoresServerGate =
             showPreviewBeforeServerConnected && isPreview;
 
-        bool serverReady = !hideMarkersUntilServerConnected || serverConnected;
+        bool serverReady = !hideMarkersUntilServerConnected || radiationSnapshot.ServerConnected;
         bool roomReady = isPreview ||
                          !enableRoomCoordinateSystem ||
                          !requireRoomCalibrationBeforeDetectorPlacement ||
@@ -53,7 +53,7 @@ public partial class DetectorWorldMarkerManager
         bool radiationReady = isPreview ||
                               !hideMarkersWithoutFreshRadiationData ||
                               (IsRadiationSnapshotFresh() &&
-                               liveRadiationDetectorIds.Count > 0);
+                               radiationSnapshot.LiveDetectorCount > 0);
 
         bool visible = marker.visibilityRequested &&
                        roomReady &&
@@ -100,19 +100,16 @@ public partial class DetectorWorldMarkerManager
 
     private bool IsRadiationSnapshotFresh()
     {
-        return serverConnected &&
-               hasReceivedRadiationSnapshot &&
-               Time.unscaledTime - lastRadiationSnapshotTime <=
-               Mathf.Max(0.5f, maximumRadiationSnapshotAgeSeconds);
+        return radiationSnapshot.IsFresh(maximumRadiationSnapshotAgeSeconds);
     }
 
     private void RefreshRadiationSnapshotVisibilityIfExpired()
     {
         bool snapshotIsFresh = IsRadiationSnapshotFresh();
-        if (snapshotIsFresh == lastSnapshotFreshnessState)
+        if (snapshotIsFresh == radiationSnapshot.LastFreshnessState)
             return;
 
-        lastSnapshotFreshnessState = snapshotIsFresh;
+        radiationSnapshot.RememberFreshness(snapshotIsFresh);
         foreach (var pair in markers)
             ApplyMarkerVisibility(pair.Value);
     }

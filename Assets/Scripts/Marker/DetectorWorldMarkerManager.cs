@@ -229,10 +229,7 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
     private readonly Dictionary<string, SourceMarker> markers =
         new Dictionary<string, SourceMarker>(StringComparer.OrdinalIgnoreCase);
     private readonly List<string> sortedHudDetectorIds = new List<string>();
-    private readonly List<string> placedDetectorOrder = new List<string>();
-    private float latestAggregateRadiationValue = -1f;
-    private readonly HashSet<string> liveRadiationDetectorIds =
-        new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
     private bool spatialEventsSubscribed = false;
     private bool warnedAboutMissingPlaneManager = false;
     private string currentFollowingDetectorId = "";
@@ -242,19 +239,15 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
     // that exact sphere immediately after it has been placed.
     private string lastInteractedDetectorId = "";
     private Shader cachedDetectorTransparentShader;
-    private bool serverConnected;
-    private bool hasReceivedRadiationSnapshot;
-    private bool lastSnapshotFreshnessState;
-    private float lastRadiationSnapshotTime = float.NegativeInfinity;
+
+
+
+
     private SourceMarker controllerHoveredMarker;
     private DetectorMoveSession activeDetectorMoveSession;
     private void OnEnable()
     {
-        hasReceivedRadiationSnapshot = false;
-        lastSnapshotFreshnessState = false;
-        lastRadiationSnapshotTime = float.NegativeInfinity;
-        liveRadiationDetectorIds.Clear();
-        latestAggregateRadiationValue = -1f;
+        radiationSnapshot.Reset();
 
         if (MarkVisualSetting.TryLoad(out MarkVisualSetting presentationConfig))
         {
