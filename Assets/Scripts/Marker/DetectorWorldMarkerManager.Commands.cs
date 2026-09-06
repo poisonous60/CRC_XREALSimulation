@@ -74,8 +74,8 @@ public partial class DetectorWorldMarkerManager
 
         foreach (var pair in markers)
         {
-            MarkerInfo marker = pair.Value;
-            if (marker == null || marker.root == null || !marker.isPlaced || !marker.root.activeInHierarchy)
+            SourceMarker marker = pair.Value;
+            if (marker == null || marker.root == null || !marker.isPlaced || !marker.isVisible)
                 continue;
 
             sortedHudDetectorIds.Add(marker.detectorId);
@@ -85,7 +85,7 @@ public partial class DetectorWorldMarkerManager
 
         for (int i = 0; i < sortedHudDetectorIds.Count; i++)
         {
-            if (!markers.TryGetValue(sortedHudDetectorIds[i], out MarkerInfo marker) ||
+            if (!markers.TryGetValue(sortedHudDetectorIds[i], out SourceMarker marker) ||
                 marker == null || marker.root == null)
             {
                 continue;

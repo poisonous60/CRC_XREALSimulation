@@ -42,7 +42,7 @@ public partial class DetectorWorldMarkerManager
             // coordinate record existed. Persist the value used by the marker now
             // so an app restart does not fall back to an unknown/hidden reading.
             string normalizedDetectorId = NormalizeDetectorId(detectorId);
-            if (markers.TryGetValue(normalizedDetectorId, out MarkerInfo marker) &&
+            if (markers.TryGetValue(normalizedDetectorId, out SourceMarker marker) &&
                 marker != null &&
                 !float.IsNaN(marker.lastRadiationValue) &&
                 !float.IsInfinity(marker.lastRadiationValue) &&
@@ -170,7 +170,7 @@ public partial class DetectorWorldMarkerManager
                     continue;
                 }
 
-                MarkerInfo marker = CreateOrMoveMarker(record.detectorId, record.GetPosition(), record.estimatedDistanceMeters, record.qrPixelSize, null);
+                SourceMarker marker = CreateOrMoveMarker(record.detectorId, record.GetPosition(), record.estimatedDistanceMeters, record.qrPixelSize, null);
 
                 if (marker != null)
                 {

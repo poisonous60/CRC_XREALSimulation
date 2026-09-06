@@ -9,7 +9,7 @@ public partial class DetectorWorldMarkerManager
 {
 
     private void UpdateFalloffShellVisuals(
-        MarkerInfo marker,
+        SourceMarker marker,
         float centerCps,
         RadiationRiskBand centerBand)
     {
@@ -98,7 +98,7 @@ public partial class DetectorWorldMarkerManager
     }
 
     private bool TryConfigureFalloffBoundary(
-        MarkerInfo marker,
+        SourceMarker marker,
         ref int shellIndex,
         ref float lastConfiguredRadius,
         int availableShells,
@@ -121,7 +121,7 @@ public partial class DetectorWorldMarkerManager
         return true;
     }
 
-    private void EnsureFalloffShellPool(MarkerInfo marker)
+    private void EnsureFalloffShellPool(SourceMarker marker)
     {
         if (marker == null || marker.root == null)
             return;
@@ -179,7 +179,7 @@ public partial class DetectorWorldMarkerManager
     }
 
     private void ConfigureFalloffShell(
-        MarkerInfo marker,
+        SourceMarker marker,
         int shellIndex,
         float radiusMeters,
         RadiationRiskBand band)
@@ -232,7 +232,7 @@ public partial class DetectorWorldMarkerManager
             : fallbackValue;
     }
 
-    private void HideFalloffShells(MarkerInfo marker)
+    private void HideFalloffShells(SourceMarker marker)
     {
         if (marker == null || marker.falloffShells == null)
             return;

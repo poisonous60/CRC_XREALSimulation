@@ -25,7 +25,7 @@ public partial class DetectorWorldMarkerManager
 
     private void FinalizeSpatialBinding(
         string detectorId,
-        MarkerInfo marker,
+        SourceMarker marker,
         Vector3 worldPosition,
         Quaternion worldRotation,
         bool forceCreateSpatialAnchor = false)
@@ -84,7 +84,7 @@ public partial class DetectorWorldMarkerManager
 
         if (HasStoredRoomPose(detectorId))
         {
-            if (markers.TryGetValue(detectorId, out MarkerInfo roomMarker) &&
+            if (markers.TryGetValue(detectorId, out SourceMarker roomMarker) &&
                 roomMarker != null)
             {
                 roomMarker.anchor = null;
@@ -94,7 +94,7 @@ public partial class DetectorWorldMarkerManager
             return;
         }
 
-        if (!markers.TryGetValue(detectorId, out MarkerInfo marker) || marker == null)
+        if (!markers.TryGetValue(detectorId, out SourceMarker marker) || marker == null)
             return;
 
         marker.anchor = anchor;
@@ -131,7 +131,7 @@ public partial class DetectorWorldMarkerManager
         if (HasStoredRoomPose(detectorId))
             return;
 
-        MarkerInfo marker = CreateOrMoveMarker(
+        SourceMarker marker = CreateOrMoveMarker(
             detectorId,
             anchor.transform.position,
             0f,
@@ -196,7 +196,7 @@ public partial class DetectorWorldMarkerManager
         if (IsActivePlacementForDetector(detectorId))
             return;
 
-        if (markers.TryGetValue(detectorId, out MarkerInfo marker))
+        if (markers.TryGetValue(detectorId, out SourceMarker marker))
         {
             marker.anchorState = "anchor save failed";
             UpdateLabel(marker, marker.lastRadiationValue, false);

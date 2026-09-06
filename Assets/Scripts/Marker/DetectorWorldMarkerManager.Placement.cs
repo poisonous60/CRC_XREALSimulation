@@ -77,7 +77,7 @@ public partial class DetectorWorldMarkerManager
         lastInteractedDetectorId = "";
 
         if (!updateExistingMarkerOnRescan &&
-            markers.TryGetValue(detectorId, out MarkerInfo existingMarker) &&
+            markers.TryGetValue(detectorId, out SourceMarker existingMarker) &&
             existingMarker != null && existingMarker.root != null && existingMarker.isPlaced)
         {
             // The QR scanner has already switched out of scan mode. End any other
@@ -111,7 +111,7 @@ public partial class DetectorWorldMarkerManager
         Vector3 worldPosition = CalculateWorldPosition(placementImagePoint, imageWidth, imageHeight, estimatedDistance);
         Quaternion worldRotation = CalculateMarkerRotation(worldPosition);
 
-        MarkerInfo marker = CreateOrMoveMarker(detectorId, worldPosition, estimatedDistance, qrPixelSize, null);
+        SourceMarker marker = CreateOrMoveMarker(detectorId, worldPosition, estimatedDistance, qrPixelSize, null);
         if (marker == null)
             return false;
 
@@ -175,7 +175,7 @@ public partial class DetectorWorldMarkerManager
 
         if (activePlacementSession != null &&
             DetectorIdsEqual(activePlacementSession.detectorId, detectorId) &&
-            markers.TryGetValue(activePlacementSession.detectorId, out MarkerInfo activeMarker) &&
+            markers.TryGetValue(activePlacementSession.detectorId, out SourceMarker activeMarker) &&
             activeMarker != null && activeMarker.root != null)
         {
             currentFollowingDetectorId = activePlacementSession.detectorId;
@@ -184,7 +184,7 @@ public partial class DetectorWorldMarkerManager
 
         RollbackActivePlacementSession();
 
-        MarkerInfo existing = null;
+        SourceMarker existing = null;
         if (markers.TryGetValue(detectorId, out existing) &&
             (existing == null || existing.root == null))
         {
@@ -217,7 +217,7 @@ public partial class DetectorWorldMarkerManager
         return canonicalDetectorId;
     }
 
-    private PlacementSession CapturePlacementSession(string detectorId, MarkerInfo marker)
+    private PlacementSession CapturePlacementSession(string detectorId, SourceMarker marker)
     {
         PlacementSession session = new PlacementSession
         {
@@ -263,7 +263,7 @@ public partial class DetectorWorldMarkerManager
 
         detectorId = NormalizeDetectorId(detectorId);
         if (string.IsNullOrEmpty(detectorId) ||
-            !markers.TryGetValue(detectorId, out MarkerInfo marker))
+            !markers.TryGetValue(detectorId, out SourceMarker marker))
             return false;
 
         if (marker == null)
@@ -343,7 +343,7 @@ public partial class DetectorWorldMarkerManager
         if (string.IsNullOrEmpty(currentFollowingDetectorId))
             return;
 
-        if (!markers.TryGetValue(currentFollowingDetectorId, out MarkerInfo marker) || marker == null)
+        if (!markers.TryGetValue(currentFollowingDetectorId, out SourceMarker marker) || marker == null)
             return;
 
         if (!marker.isFollowingPlacementOrigin || marker.isPlaced)
@@ -352,7 +352,7 @@ public partial class DetectorWorldMarkerManager
         UpdateFollowingMarkerPosition(marker);
     }
 
-    private void UpdateFollowingMarkerPosition(MarkerInfo marker)
+    private void UpdateFollowingMarkerPosition(SourceMarker marker)
     {
         if (marker == null || marker.root == null)
             return;
@@ -390,7 +390,7 @@ public partial class DetectorWorldMarkerManager
         marker.hasValidPlaneHit = false;
     }
 
-    private void UpdateFollowingMarkerFromPlaneIntersection(MarkerInfo marker)
+    private void UpdateFollowingMarkerFromPlaneIntersection(SourceMarker marker)
     {
         if (!TryGetGazePlaneIntersection(out Vector3 hitPosition, out Quaternion hitRotation, out float hitDistance))
         {
@@ -449,7 +449,7 @@ public partial class DetectorWorldMarkerManager
             return false;
         }
 
-        if (!markers.TryGetValue(detectorId, out MarkerInfo marker) ||
+        if (!markers.TryGetValue(detectorId, out SourceMarker marker) ||
             marker == null || marker.root == null)
         {
             resultMessage = $"Detector preview not found: {detectorId}";
@@ -480,7 +480,7 @@ public partial class DetectorWorldMarkerManager
         if (string.IsNullOrEmpty(detectorId))
             return;
 
-        if (!markers.TryGetValue(detectorId, out MarkerInfo marker) || marker == null || marker.root == null)
+        if (!markers.TryGetValue(detectorId, out SourceMarker marker) || marker == null || marker.root == null)
         {
             Debug.LogWarning($"[DetectorWorldMarkerManager] PlaceDetector failed. Marker not found: {detectorId}");
             return;

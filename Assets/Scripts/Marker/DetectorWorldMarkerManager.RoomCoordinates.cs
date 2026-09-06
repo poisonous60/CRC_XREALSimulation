@@ -24,7 +24,7 @@ public partial class DetectorWorldMarkerManager
         int savedCount = 0;
         foreach (var pair in markers)
         {
-            MarkerInfo marker = pair.Value;
+            SourceMarker marker = pair.Value;
             if (marker == null || marker.root == null || !marker.isPlaced)
                 continue;
 
@@ -91,7 +91,7 @@ public partial class DetectorWorldMarkerManager
         for (int i = 0; i < markersOutsideRoom.Count; i++)
         {
             string detectorId = markersOutsideRoom[i];
-            if (!markers.TryGetValue(detectorId, out MarkerInfo marker) || marker == null)
+            if (!markers.TryGetValue(detectorId, out SourceMarker marker) || marker == null)
                 continue;
 
             markers.Remove(detectorId);
@@ -111,7 +111,7 @@ public partial class DetectorWorldMarkerManager
             }
 
             string detectorId = NormalizeDetectorId(record.detectorId);
-            markers.TryGetValue(detectorId, out MarkerInfo existing);
+            markers.TryGetValue(detectorId, out SourceMarker existing);
             if (existing != null && existing.root == null)
             {
                 DestroyMarkerVisualResources(existing);
@@ -123,7 +123,7 @@ public partial class DetectorWorldMarkerManager
             Quaternion worldRotation =
                 roomFrame.RoomToWorldRotation(record.GetRoomRotation());
 
-            MarkerInfo marker = existing;
+            SourceMarker marker = existing;
             bool newlyRestored = marker == null;
             if (newlyRestored)
             {
@@ -186,7 +186,7 @@ public partial class DetectorWorldMarkerManager
 
         foreach (var pair in markers)
         {
-            MarkerInfo marker = pair.Value;
+            SourceMarker marker = pair.Value;
             if (marker == null)
                 continue;
 

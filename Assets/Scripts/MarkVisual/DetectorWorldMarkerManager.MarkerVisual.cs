@@ -8,7 +8,7 @@ using UnityEngine.XR.ARSubsystems;
 public partial class DetectorWorldMarkerManager
 {
 
-    private MarkerInfo CreateOrMoveMarker(
+    private SourceMarker CreateOrMoveMarker(
         string detectorId,
         Vector3 worldPosition,
         float estimatedDistance,
@@ -20,7 +20,7 @@ public partial class DetectorWorldMarkerManager
         if (string.IsNullOrEmpty(detectorId))
             return null;
 
-        if (markers.TryGetValue(detectorId, out MarkerInfo existing))
+        if (markers.TryGetValue(detectorId, out SourceMarker existing))
         {
             if (existing == null || existing.root == null)
             {
@@ -79,30 +79,32 @@ public partial class DetectorWorldMarkerManager
         root.transform.localScale = Vector3.one * fixedMarkerSize;
 
         Renderer renderer = root.GetComponentInChildren<Renderer>();
+
+        // Captured before the label and the shells exist, so hiding never fights their owners.
+        Renderer[] bodyRenderers = root.GetComponentsInChildren<Renderer>(true);
+
         TMP_Text label = null;
 
         if (showLabel)
             label = CreateLabel(root.transform, detectorId);
 
-        MarkerInfo info = new MarkerInfo
-        {
-            detectorId = detectorId,
-            root = root,
-            renderer = renderer,
-            label = label,
-            savedPosition = worldPosition,
-            lastRadiationValue = GetLatestRadiationValue(detectorId, -1f),
-            lastEstimatedDistance = estimatedDistance,
-            lastQrPixelSize = qrPixelSize,
-            lastPlacementImagePoint = new Vector2(0.5f, 0.5f),
-            lastImageWidth = 1,
-            lastImageHeight = 1,
-            lastPlacementMethod = "preview projection",
-            isFollowingPlacementOrigin = false,
-            isPlaced = false,
-            centerVisualRequested = true,
-            anchorState = useSpatialAnchors ? "no anchor yet" : "preview projection"
-        };
+        SourceMarker info = root.AddComponent<SourceMarker>();
+        info.detectorId = detectorId;
+        info.renderer = renderer;
+        info.bodyRenderers = bodyRenderers;
+        info.label = label;
+        info.savedPosition = worldPosition;
+        info.lastRadiationValue = GetLatestRadiationValue(detectorId, -1f);
+        info.lastEstimatedDistance = estimatedDistance;
+        info.lastQrPixelSize = qrPixelSize;
+        info.lastPlacementImagePoint = new Vector2(0.5f, 0.5f);
+        info.lastImageWidth = 1;
+        info.lastImageHeight = 1;
+        info.lastPlacementMethod = "preview projection";
+        info.isFollowingPlacementOrigin = false;
+        info.isPlaced = false;
+        info.centerVisualRequested = true;
+        info.anchorState = useSpatialAnchors ? "no anchor yet" : "preview projection";
 
         markers.Add(detectorId, info);
         ForceMarkerVisible(info);
@@ -171,7 +173,7 @@ public partial class DetectorWorldMarkerManager
         return label;
     }
 
-    private void UpdateLabelTransform(MarkerInfo marker)
+    private void UpdateLabelTransform(SourceMarker marker)
     {
         if (marker == null || marker.root == null || marker.label == null || fallbackCamera == null)
             return;
@@ -216,7 +218,7 @@ public partial class DetectorWorldMarkerManager
             : desiredWorldScale;
     }
 
-    private void UpdateMarkerVisual(MarkerInfo marker, float radiationValue)
+    private void UpdateMarkerVisual(SourceMarker marker, float radiationValue)
     {
         if (marker == null || marker.root == null)
             return;
@@ -374,7 +376,7 @@ public partial class DetectorWorldMarkerManager
         return material;
     }
 
-    private void DestroyMarkerVisualResources(MarkerInfo marker)
+    private void DestroyMarkerVisualResources(SourceMarker marker)
     {
         if (marker == null)
             return;
@@ -443,7 +445,7 @@ public partial class DetectorWorldMarkerManager
         return cachedDetectorTransparentShader;
     }
 
-    private void UpdateLabel(MarkerInfo marker, float radiationValue, bool moved)
+    private void UpdateLabel(SourceMarker marker, float radiationValue, bool moved)
     {
         if (marker == null || marker.label == null)
             return;

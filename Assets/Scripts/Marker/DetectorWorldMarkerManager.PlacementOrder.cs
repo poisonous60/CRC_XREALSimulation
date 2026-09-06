@@ -63,7 +63,7 @@ public partial class DetectorWorldMarkerManager
         for (int i = placedDetectorOrder.Count - 1; i >= 0; i--)
         {
             string candidateId = NormalizeDetectorId(placedDetectorOrder[i]);
-            if (markers.TryGetValue(candidateId, out MarkerInfo marker) &&
+            if (markers.TryGetValue(candidateId, out SourceMarker marker) &&
                 marker != null && marker.root != null && marker.isPlaced)
             {
                 detectorId = marker.detectorId;

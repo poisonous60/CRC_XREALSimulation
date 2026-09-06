@@ -226,8 +226,8 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
     [Tooltip("Additional center-sphere opacity while a detector is being moved.")]
     [SerializeField, Range(0f, 0.6f)] private float controllerMoveAlphaBoost = 0.14f;
 
-    private readonly Dictionary<string, MarkerInfo> markers =
-        new Dictionary<string, MarkerInfo>(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, SourceMarker> markers =
+        new Dictionary<string, SourceMarker>(StringComparer.OrdinalIgnoreCase);
     private readonly List<string> sortedHudDetectorIds = new List<string>();
     private readonly List<string> placedDetectorOrder = new List<string>();
     private float latestAggregateRadiationValue = -1f;
@@ -246,7 +246,7 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
     private bool hasReceivedRadiationSnapshot;
     private bool lastSnapshotFreshnessState;
     private float lastRadiationSnapshotTime = float.NegativeInfinity;
-    private MarkerInfo controllerHoveredMarker;
+    private SourceMarker controllerHoveredMarker;
     private DetectorMoveSession activeDetectorMoveSession;
     private void OnEnable()
     {
@@ -338,7 +338,7 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
         {
             string detectorId = NormalizeDetectorId(ActivePlacementDetectorId);
             if (string.IsNullOrEmpty(detectorId) ||
-                !markers.TryGetValue(detectorId, out MarkerInfo marker) ||
+                !markers.TryGetValue(detectorId, out SourceMarker marker) ||
                 marker == null || marker.root == null)
             {
                 return false;
@@ -359,7 +359,7 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
             int count = 0;
             foreach (var pair in markers)
             {
-                MarkerInfo marker = pair.Value;
+                SourceMarker marker = pair.Value;
                 if (marker != null && marker.root != null && marker.isPlaced)
                     count++;
             }

@@ -8,14 +8,14 @@ using UnityEngine.XR.ARSubsystems;
 public partial class DetectorWorldMarkerManager
 {
 
-    private bool IsPreviewMarker(MarkerInfo marker)
+    private bool IsPreviewMarker(SourceMarker marker)
     {
         return marker != null &&
                marker.isFollowingPlacementOrigin &&
                !marker.isPlaced;
     }
 
-    private void ForceMarkerVisible(MarkerInfo marker)
+    private void ForceMarkerVisible(SourceMarker marker)
     {
         if (marker == null)
             return;
@@ -23,7 +23,7 @@ public partial class DetectorWorldMarkerManager
         SetMarkerRequestedVisibility(marker, true);
     }
 
-    private void SetMarkerRequestedVisibility(MarkerInfo marker, bool visible)
+    private void SetMarkerRequestedVisibility(SourceMarker marker, bool visible)
     {
         if (marker == null)
             return;
@@ -32,7 +32,7 @@ public partial class DetectorWorldMarkerManager
         ApplyMarkerVisibility(marker);
     }
 
-    private void ApplyMarkerVisibility(MarkerInfo marker)
+    private void ApplyMarkerVisibility(SourceMarker marker)
     {
         if (marker == null)
             return;
@@ -60,13 +60,27 @@ public partial class DetectorWorldMarkerManager
                        radiationReady &&
                        (previewIgnoresServerGate || serverReady);
 
-        if (marker.root != null)
-            marker.root.SetActive(visible);
+        marker.isVisible = visible;
 
-        if (marker.renderer != null)
+        bool centerVisible = marker.centerVisualRequested ||
+                             (showGrayPreviewSphere && IsPreviewMarker(marker));
+
+        // The object stays active while hidden so its own components keep running.
+        if (marker.bodyRenderers != null && marker.bodyRenderers.Length > 0)
         {
-            bool centerVisible = marker.centerVisualRequested ||
-                                 (showGrayPreviewSphere && IsPreviewMarker(marker));
+            for (int i = 0; i < marker.bodyRenderers.Length; i++)
+            {
+                Renderer bodyRenderer = marker.bodyRenderers[i];
+
+                if (bodyRenderer == null)
+                    continue;
+
+                bool isCenter = bodyRenderer == marker.renderer;
+                bodyRenderer.enabled = visible && (!isCenter || centerVisible);
+            }
+        }
+        else if (marker.renderer != null)
+        {
             marker.renderer.enabled = visible && centerVisible;
         }
 

@@ -48,37 +48,9 @@ public partial class DetectorWorldMarkerManager
         public string anchorState;
     }
 
-    private class MarkerInfo
-    {
-        public string detectorId;
-        public GameObject root;
-        public Renderer renderer;
-        public TMP_Text label;
-        public Vector3 savedPosition;
-        public float lastRadiationValue;
-        public float lastEstimatedDistance;
-        public float lastQrPixelSize;
-        public Vector2 lastPlacementImagePoint;
-        public int lastImageWidth;
-        public int lastImageHeight;
-        public string lastPlacementMethod;
-        public bool isFollowingPlacementOrigin;
-        public bool isPlaced;
-        public bool hasValidPlaneHit;
-        public bool visibilityRequested;
-        public bool centerVisualRequested;
-        public bool isControllerHovered;
-        public bool isControllerMoving;
-        public List<FalloffShellInfo> falloffShells;
-        public Material centerMaterial;
-        public ARAnchor anchor;
-        public string anchorGuid;
-        public string anchorState;
-    }
-
     private class DetectorMoveSession
     {
-        public MarkerInfo marker;
+        public SourceMarker marker;
         public Transform parent;
         public Vector3 worldPosition;
         public Quaternion worldRotation;
@@ -96,11 +68,4 @@ public partial class DetectorWorldMarkerManager
         public Vector3 initialOffsetFromRayOrigin;
     }
 
-    private class FalloffShellInfo
-    {
-        public GameObject root;
-        public Renderer renderer;
-        public bool visualRequested;
-        public Material material;
-    }
 }

@@ -25,7 +25,7 @@ public partial class DetectorWorldMarkerManager
 
         if (activeDetectorMoveSession != null)
         {
-            MarkerInfo movingMarker = activeDetectorMoveSession.marker;
+            SourceMarker movingMarker = activeDetectorMoveSession.marker;
             if (movingMarker != null && movingMarker.root != null)
             {
                 SetControllerHoveredMarker(movingMarker);
@@ -58,11 +58,11 @@ public partial class DetectorWorldMarkerManager
         bool selectedDirectHit = false;
         float closestEntryDepth = float.PositiveInfinity;
         float closestNormalizedMiss = float.PositiveInfinity;
-        MarkerInfo selectedMarker = null;
+        SourceMarker selectedMarker = null;
 
         foreach (var pair in markers)
         {
-            MarkerInfo marker = pair.Value;
+            SourceMarker marker = pair.Value;
             if (!IsMarkerSelectableByController(marker))
                 continue;
 
@@ -170,7 +170,7 @@ public partial class DetectorWorldMarkerManager
         }
 
         initialDirection.Normalize();
-        MarkerInfo marker = controllerHoveredMarker;
+        SourceMarker marker = controllerHoveredMarker;
         Transform markerTransform = marker.root.transform;
         activeDetectorMoveSession = new DetectorMoveSession
         {
@@ -234,7 +234,7 @@ public partial class DetectorWorldMarkerManager
         if (!IsFiniteVector(newPosition))
             return false;
 
-        MarkerInfo marker = activeDetectorMoveSession.marker;
+        SourceMarker marker = activeDetectorMoveSession.marker;
         marker.root.transform.SetPositionAndRotation(
             newPosition,
             activeDetectorMoveSession.worldRotation);
@@ -257,7 +257,7 @@ public partial class DetectorWorldMarkerManager
 
         DetectorMoveSession session = activeDetectorMoveSession;
         activeDetectorMoveSession = null;
-        MarkerInfo marker = session.marker;
+        SourceMarker marker = session.marker;
         if (marker == null || marker.root == null)
         {
             resultMessage = "The moving detector is no longer available";
@@ -315,7 +315,7 @@ public partial class DetectorWorldMarkerManager
         if (session == null || session.marker == null || session.marker.root == null)
             return;
 
-        MarkerInfo marker = session.marker;
+        SourceMarker marker = session.marker;
         Transform markerTransform = marker.root.transform;
         markerTransform.SetParent(session.parent, false);
         if (session.parent != null)
@@ -382,12 +382,12 @@ public partial class DetectorWorldMarkerManager
         SetControllerHoveredMarker(null);
     }
 
-    private void SetControllerHoveredMarker(MarkerInfo marker)
+    private void SetControllerHoveredMarker(SourceMarker marker)
     {
         if (ReferenceEquals(controllerHoveredMarker, marker))
             return;
 
-        MarkerInfo previous = controllerHoveredMarker;
+        SourceMarker previous = controllerHoveredMarker;
         controllerHoveredMarker = marker;
 
         if (previous != null)
@@ -409,11 +409,11 @@ public partial class DetectorWorldMarkerManager
         }
     }
 
-    private bool IsMarkerSelectableByController(MarkerInfo marker)
+    private bool IsMarkerSelectableByController(SourceMarker marker)
     {
         return marker != null &&
                marker.root != null &&
-               marker.root.activeInHierarchy &&
+               marker.isVisible &&
                marker.isPlaced &&
                !marker.isFollowingPlacementOrigin &&
                marker.centerVisualRequested &&
