@@ -22,6 +22,14 @@ public class SourceMarkerVisual : MonoBehaviour
         shells.Initialize(owner, visualSettings);
     }
 
+    public void SetSettings(MarkerVisualSettings visualSettings)
+    {
+        settings = visualSettings;
+
+        if (shells != null)
+            shells.Initialize(marker, visualSettings);
+    }
+
     public void EnsureLabel()
     {
         if (marker == null || settings == null || !settings.showLabel || marker.label != null)

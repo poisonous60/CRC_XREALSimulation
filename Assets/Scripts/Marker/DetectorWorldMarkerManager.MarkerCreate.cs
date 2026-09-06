@@ -116,13 +116,12 @@ public partial class DetectorWorldMarkerManager
 
         Renderer renderer = root.GetComponentInChildren<Renderer>();
 
-        // Captured before the label and the shells exist, so hiding never fights their owners.
-        Renderer[] bodyRenderers = root.GetComponentsInChildren<Renderer>(true);
-
         SourceMarker info = root.AddComponent<SourceMarker>();
         info.detectorId = detectorId;
         info.renderer = renderer;
-        info.bodyRenderers = bodyRenderers;
+
+        // Captured before the label and the shells exist, so hiding never fights their owners.
+        info.CaptureBodyRenderers(root);
         info.savedPosition = worldPosition;
         info.lastRadiationValue = GetLatestRadiationValue(detectorId, -1f);
         info.lastEstimatedDistance = estimatedDistance;
@@ -195,7 +194,10 @@ public partial class DetectorWorldMarkerManager
         marker.lastRadiationValue = radiationValue;
 
         if (marker.visual != null)
+        {
+            marker.visual.SetSettings(VisualSettings);
             marker.visual.Refresh(radiationValue, IsPreviewMarker(marker));
+        }
 
         // Radiation value affects visibility/color only. Center size stays fixed.
         marker.root.transform.localScale = Vector3.one * fixedMarkerSize;
@@ -216,6 +218,7 @@ public partial class DetectorWorldMarkerManager
         if (marker == null || marker.visual == null)
             return;
 
+        marker.visual.SetSettings(VisualSettings);
         marker.visual.UpdateLabel(radiationValue, moved);
     }
 
@@ -224,6 +227,7 @@ public partial class DetectorWorldMarkerManager
         if (marker == null || marker.visual == null)
             return;
 
+        marker.visual.SetSettings(VisualSettings);
         marker.visual.UpdateLabelTransform();
     }
 

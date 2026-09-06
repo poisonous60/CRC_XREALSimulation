@@ -66,8 +66,15 @@ public class MarkerVisibilityPolicy
                 if (bodyRenderer == null)
                     continue;
 
+                bool wasEnabledAtCreation =
+                    marker.bodyRendererDefaults == null ||
+                    i >= marker.bodyRendererDefaults.Length ||
+                    marker.bodyRendererDefaults[i];
+
                 bool isCenter = bodyRenderer == marker.renderer;
-                bodyRenderer.enabled = visible && (!isCenter || centerVisible);
+                bodyRenderer.enabled = isCenter
+                    ? visible && centerVisible
+                    : visible && wasEnabledAtCreation;
             }
         }
         else if (marker.renderer != null)
