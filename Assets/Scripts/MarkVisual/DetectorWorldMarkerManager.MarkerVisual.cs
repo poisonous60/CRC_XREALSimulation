@@ -60,7 +60,7 @@ public partial class DetectorWorldMarkerManager
 
         Transform markerParent = parent != null && parentMarkerToAnchor ? parent : transform;
 
-        SourcePresentationConfig.TryLoad(out SourcePresentationConfig presentationConfig);
+        MarkVisualSetting.TryLoad(out MarkVisualSetting presentationConfig);
 
         GameObject prefab = markerPrefab;
 
@@ -115,7 +115,7 @@ public partial class DetectorWorldMarkerManager
         if (markerPrefab != null)
             return true;
 
-        return SourcePresentationConfig.TryLoad(out SourcePresentationConfig presentationConfig)
+        return MarkVisualSetting.TryLoad(out MarkVisualSetting presentationConfig)
             && presentationConfig.MarkerPrefab != null;
     }
 
@@ -285,7 +285,7 @@ public partial class DetectorWorldMarkerManager
 
     private Color GetRiskColor(float radiationValue)
     {
-        if (SourcePresentationConfig.TryLoad(out SourcePresentationConfig presentationConfig) &&
+        if (MarkVisualSetting.TryLoad(out MarkVisualSetting presentationConfig) &&
             presentationConfig.TryGetStatusColor(radiationValue, out Color bandColor))
         {
             return ToMarkerColor(bandColor);

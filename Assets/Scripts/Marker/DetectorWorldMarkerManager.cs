@@ -256,8 +256,12 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
         liveRadiationDetectorIds.Clear();
         latestAggregateRadiationValue = -1f;
 
-        if (SourcePresentationConfig.TryLoad(out SourcePresentationConfig presentationConfig))
+        if (MarkVisualSetting.TryLoad(out MarkVisualSetting presentationConfig))
+        {
             fixedMarkerSize = presentationConfig.MarkerSizeMeters;
+            showFalloffShells = presentationConfig.ShowFalloffShells;
+            showLabel = presentationConfig.ShowLabel;
+        }
 
         fixedMarkerSize = Mathf.Max(0.001f, fixedMarkerSize);
 

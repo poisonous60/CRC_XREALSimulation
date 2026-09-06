@@ -16,15 +16,15 @@ public class StatusColorBand
 }
 
 /// <summary>
-/// Project-wide slots for the source representation, loaded from Resources by every scene.
+/// Project-wide slots for the source marker's look, loaded from Resources by every scene.
 /// </summary>
-[CreateAssetMenu(fileName = "SourcePresentationConfig", menuName = "RadVis/Source Presentation Config")]
-public class SourcePresentationConfig : ScriptableObject
+[CreateAssetMenu(fileName = "MarkVisualSetting", menuName = "RadVis/Mark Visual Setting")]
+public class MarkVisualSetting : ScriptableObject
 {
-    private const string ResourceName = "SourcePresentationConfig";
+    private const string ResourceName = "MarkVisualSetting";
     private const float MinimumMarkerSizeMeters = 0.001f;
 
-    private static SourcePresentationConfig loaded;
+    private static MarkVisualSetting loaded;
 
     [Header("(a) Marker")]
     [Tooltip("Replaces the whole marker object. Empty keeps the built-in sphere and its transparent shader.")]
@@ -51,11 +51,20 @@ public class SourcePresentationConfig : ScriptableObject
     [Tooltip("Information shown as the user approaches. Empty draws nothing.")]
     [SerializeField] private SourcePresentation proximityPrefab;
 
+    [Header("Code-drawn Extras")]
+    [Tooltip("Faint inverse-square shells around the marker. Drawn in code, so no prefab changes their look.")]
+    [SerializeField] private bool showFalloffShells = true;
+
+    [Tooltip("Detector name text beside the marker. Drawn in code, so no prefab changes its look.")]
+    [SerializeField] private bool showLabel = false;
+
     public GameObject MarkerPrefab => markerPrefab;
     public float MarkerSizeMeters => Mathf.Max(MinimumMarkerSizeMeters, markerSizeMeters);
     public Color UnknownColor => unknownColor;
     public OffscreenIndicatorView OffscreenPrefab => offscreenPrefab;
     public SourcePresentation ProximityPrefab => proximityPrefab;
+    public bool ShowFalloffShells => showFalloffShells;
+    public bool ShowLabel => showLabel;
 
     // Statics survive entering play mode when Reload Domain is off, so drop the cache here.
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -64,10 +73,10 @@ public class SourcePresentationConfig : ScriptableObject
         loaded = null;
     }
 
-    public static bool TryLoad(out SourcePresentationConfig config)
+    public static bool TryLoad(out MarkVisualSetting config)
     {
         if (loaded == null)
-            loaded = Resources.Load<SourcePresentationConfig>(ResourceName);
+            loaded = Resources.Load<MarkVisualSetting>(ResourceName);
 
         config = loaded;
         return config != null;

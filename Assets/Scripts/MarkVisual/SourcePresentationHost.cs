@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Spawns the proximity presentation named by SourcePresentationConfig.
+/// Spawns the proximity presentation named by MarkVisualSetting.
 /// </summary>
 [DisallowMultipleComponent]
 public class SourcePresentationHost : MonoBehaviour
@@ -31,10 +31,10 @@ public class SourcePresentationHost : MonoBehaviour
             return;
         }
 
-        if (!SourcePresentationConfig.TryLoad(out SourcePresentationConfig config))
+        if (!MarkVisualSetting.TryLoad(out MarkVisualSetting config))
         {
             Debug.LogWarning(
-                $"[SourcePresentationHost] {name} found no SourcePresentationConfig under a Resources folder.");
+                $"[SourcePresentationHost] {name} found no MarkVisualSetting under a Resources folder.");
             return;
         }
 

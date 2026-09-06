@@ -95,7 +95,7 @@ public partial class ARDetectorHud
     {
         OffscreenIndicatorView prefab = null;
 
-        if (SourcePresentationConfig.TryLoad(out SourcePresentationConfig presentationConfig))
+        if (MarkVisualSetting.TryLoad(out MarkVisualSetting presentationConfig))
             prefab = presentationConfig.OffscreenPrefab;
 
         while (indicatorPool.Count < count)
