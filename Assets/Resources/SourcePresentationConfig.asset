@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfd3f835e48bd1748a20c259102e8a4e, type: 3}
   m_Name: SourcePresentationConfig
   m_EditorClassIdentifier: 
-  markerPrefab: {fileID: 0}
+  markerPrefab: {fileID: 6387016307566893731, guid: f2003d6915d08a442a39baa3dd841a37, type: 3}
+  markerSizeMeters: 0.2
   statusBands:
   - maxCps: 10
     color: {r: 0, g: 1, b: 0, a: 1}
