@@ -7,6 +7,7 @@ using UnityEngine.XR.ARSubsystems;
 
 public partial class DetectorWorldMarkerManager
 {
+    private readonly MarkerRaySelector markerRaySelector = new MarkerRaySelector();
 
     /// <summary>
     /// Updates the controller-ray hover without relying on colliders. Detector
@@ -44,74 +45,12 @@ public partial class DetectorWorldMarkerManager
             return false;
         }
 
-        Vector3 rayDirection = pointerRay.direction;
-        if (!IsFiniteVector(rayDirection) || rayDirection.sqrMagnitude < 0.0001f)
-        {
-            SetControllerHoveredMarker(null);
-            return false;
-        }
+        markerRaySelector.maxDistanceMeters = controllerSelectionMaxDistanceMeters;
+        markerRaySelector.selectionAngleDegrees = controllerSelectionAngleDegrees;
+        markerRaySelector.radiusMultiplier = controllerSelectionRadiusMultiplier;
+        markerRaySelector.fixedMarkerSize = fixedMarkerSize;
 
-        rayDirection.Normalize();
-        float maximumDistance = Mathf.Max(0.5f, controllerSelectionMaxDistanceMeters);
-        float angularAllowance = Mathf.Tan(
-            Mathf.Clamp(controllerSelectionAngleDegrees, 0.25f, 8f) * Mathf.Deg2Rad);
-        bool selectedDirectHit = false;
-        float closestEntryDepth = float.PositiveInfinity;
-        float closestNormalizedMiss = float.PositiveInfinity;
-        SourceMarker selectedMarker = null;
-
-        foreach (var pair in markers)
-        {
-            SourceMarker marker = pair.Value;
-            if (!IsMarkerSelectableByController(marker))
-                continue;
-
-            Vector3 toMarker = marker.root.transform.position - pointerRay.origin;
-            float depth = Vector3.Dot(toMarker, rayDirection);
-            if (depth <= 0.02f || depth > maximumDistance)
-                continue;
-
-            float perpendicularSquared =
-                Mathf.Max(0f, toMarker.sqrMagnitude - depth * depth);
-            float visibleRadius = Mathf.Max(0.01f, fixedMarkerSize * 0.5f);
-            if (marker.renderer != null)
-            {
-                Vector3 extents = marker.renderer.bounds.extents;
-                visibleRadius = Mathf.Max(
-                    visibleRadius,
-                    Mathf.Max(extents.x, Mathf.Max(extents.y, extents.z)));
-            }
-
-            float hitRadius =
-                visibleRadius * Mathf.Max(1f, controllerSelectionRadiusMultiplier);
-            bool directHit = perpendicularSquared <= hitRadius * hitRadius;
-            float allowedRadius = Mathf.Max(
-                hitRadius,
-                depth * angularAllowance);
-            if (perpendicularSquared > allowedRadius * allowedRadius)
-                continue;
-
-            float normalizedMiss =
-                Mathf.Sqrt(perpendicularSquared) / Mathf.Max(0.001f, depth);
-            float entryDepth = directHit
-                ? depth - Mathf.Sqrt(
-                    Mathf.Max(0f, hitRadius * hitRadius - perpendicularSquared))
-                : depth;
-            bool shouldSelect =
-                selectedMarker == null ||
-                (directHit && !selectedDirectHit) ||
-                (directHit == selectedDirectHit &&
-                 (entryDepth < closestEntryDepth ||
-                  (Mathf.Approximately(entryDepth, closestEntryDepth) &&
-                   normalizedMiss < closestNormalizedMiss)));
-            if (shouldSelect)
-            {
-                selectedDirectHit = directHit;
-                closestEntryDepth = entryDepth;
-                closestNormalizedMiss = normalizedMiss;
-                selectedMarker = marker;
-            }
-        }
+        SourceMarker selectedMarker = markerRaySelector.Select(pointerRay, markers);
 
         SetControllerHoveredMarker(selectedMarker);
         if (selectedMarker == null)
@@ -411,20 +350,11 @@ public partial class DetectorWorldMarkerManager
 
     private bool IsMarkerSelectableByController(SourceMarker marker)
     {
-        return marker != null &&
-               marker.root != null &&
-               marker.isVisible &&
-               marker.isPlaced &&
-               !marker.isFollowingPlacementOrigin &&
-               marker.centerVisualRequested &&
-               marker.renderer != null &&
-               marker.renderer.enabled;
+        return markerRaySelector.IsSelectable(marker);
     }
 
     private bool IsFiniteVector(Vector3 value)
     {
-        return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
-               !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
-               !float.IsNaN(value.z) && !float.IsInfinity(value.z);
+        return MarkerRaySelector.IsFiniteVector(value);
     }
 }

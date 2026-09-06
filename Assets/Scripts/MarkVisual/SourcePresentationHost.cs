@@ -49,6 +49,11 @@ public class SourcePresentationHost : MonoBehaviour
         SourcePresentation instance = Instantiate(prefab, transform);
         instance.name = role + "_" + prefab.name;
         instance.Bind(source, head);
+
+        SourceMarker marker = GetComponent<SourceMarker>();
+        if (marker != null)
+            marker.RegisterBodyRenderers(instance.gameObject);
+
         return instance;
     }
 }

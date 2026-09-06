@@ -37,4 +37,28 @@ public class SourceMarker : MonoBehaviour
     public string anchorState;
 
     public GameObject root => gameObject;
+
+    // Anything parented to the marker after creation has to say so, or hiding the marker
+    // leaves it drawn: the marker object itself is never deactivated.
+    public void RegisterBodyRenderers(GameObject addedObject)
+    {
+        if (addedObject == null)
+            return;
+
+        Renderer[] addedRenderers = addedObject.GetComponentsInChildren<Renderer>(true);
+        if (addedRenderers == null || addedRenderers.Length == 0)
+            return;
+
+        List<Renderer> merged = new List<Renderer>();
+        if (bodyRenderers != null)
+            merged.AddRange(bodyRenderers);
+
+        for (int i = 0; i < addedRenderers.Length; i++)
+        {
+            if (addedRenderers[i] != null && !merged.Contains(addedRenderers[i]))
+                merged.Add(addedRenderers[i]);
+        }
+
+        bodyRenderers = merged.ToArray();
+    }
 }
