@@ -7,6 +7,7 @@ using UnityEngine.XR.ARSubsystems;
 
 public partial class DetectorWorldMarkerManager
 {
+    private readonly PlacementGeometry placementGeometry = new PlacementGeometry();
 
     private void HandleQrDetected(string qrText, Vector2 imageCenter, int imageWidth, int imageHeight, float qrPixelSize)
     {
@@ -589,6 +590,25 @@ public partial class DetectorWorldMarkerManager
         return true;
     }
 
+    private PlacementGeometry PlacementGeometry
+    {
+        get
+        {
+            placementGeometry.usePreviewCenterPlacement = usePreviewCenterPlacement;
+            placementGeometry.markerVerticalOffsetMeters = markerVerticalOffsetMeters;
+            placementGeometry.cameraHorizontalFovDegrees = cameraHorizontalFovDegrees;
+            placementGeometry.cameraVerticalFovDegrees = cameraVerticalFovDegrees;
+            placementGeometry.useQrSizeToEstimateDistance = useQrSizeToEstimateDistance;
+            placementGeometry.defaultPlacementDistanceMeters = defaultPlacementDistanceMeters;
+            placementGeometry.realQrSizeMeters = realQrSizeMeters;
+            placementGeometry.qrEffectiveSizeRatio = qrEffectiveSizeRatio;
+            placementGeometry.distanceCalibrationMultiplier = distanceCalibrationMultiplier;
+            placementGeometry.minEstimatedDistanceMeters = minEstimatedDistanceMeters;
+            placementGeometry.maxEstimatedDistanceMeters = maxEstimatedDistanceMeters;
+            return placementGeometry;
+        }
+    }
+
     private Vector3 CalculateWorldPosition(Vector2 imagePoint, int imageWidth, int imageHeight, float distance)
     {
         EnsurePlacementOrigin();
@@ -596,60 +616,22 @@ public partial class DetectorWorldMarkerManager
         if (placementOrigin == null)
             return transform.position;
 
-        if (usePreviewCenterPlacement)
-        {
-            Vector3 direct = placementOrigin.position + placementOrigin.forward.normalized * distance;
-            direct += placementOrigin.up * markerVerticalOffsetMeters;
-            return direct;
-        }
-
-        float viewportX = imageWidth > 0 ? Mathf.Clamp01(imagePoint.x / imageWidth) : 0.5f;
-        float viewportY = imageHeight > 0 ? Mathf.Clamp01(1f - (imagePoint.y / imageHeight)) : 0.5f;
-
-        float xFromCenter = viewportX - 0.5f;
-        float yFromCenter = viewportY - 0.5f;
-
-        float tanX = Mathf.Tan(cameraHorizontalFovDegrees * Mathf.Deg2Rad * 0.5f);
-        float tanY = Mathf.Tan(cameraVerticalFovDegrees * Mathf.Deg2Rad * 0.5f);
-
-        Vector3 direction =
-            placementOrigin.forward +
-            placementOrigin.right * (xFromCenter * 2f * tanX) +
-            placementOrigin.up * (yFromCenter * 2f * tanY);
-
-        direction.Normalize();
-
-        Vector3 worldPosition = placementOrigin.position + direction * distance;
-        worldPosition += placementOrigin.up * markerVerticalOffsetMeters;
-        return worldPosition;
+        return PlacementGeometry.CalculateWorldPosition(
+            placementOrigin,
+            imagePoint,
+            imageWidth,
+            imageHeight,
+            distance);
     }
 
     private Quaternion CalculateMarkerRotation(Vector3 worldPosition)
     {
         EnsurePlacementOrigin();
-
-        if (placementOrigin == null)
-            return Quaternion.identity;
-
-        Vector3 direction = worldPosition - placementOrigin.position;
-        if (direction.sqrMagnitude < 0.0001f)
-            return Quaternion.identity;
-
-        return Quaternion.LookRotation(direction.normalized, Vector3.up);
+        return PlacementGeometry.CalculateMarkerRotation(placementOrigin, worldPosition);
     }
 
     private float GetPlacementDistance(int imageWidth, float qrPixelSize)
     {
-        if (!useQrSizeToEstimateDistance || imageWidth <= 0 || qrPixelSize <= 1f || realQrSizeMeters <= 0f)
-            return defaultPlacementDistanceMeters;
-
-        float horizontalFovRad = cameraHorizontalFovDegrees * Mathf.Deg2Rad;
-        float focalLengthPixels = (imageWidth * 0.5f) / Mathf.Tan(horizontalFovRad * 0.5f);
-
-        float effectiveQrSizeMeters = realQrSizeMeters * qrEffectiveSizeRatio;
-        float estimatedDistance = (effectiveQrSizeMeters * focalLengthPixels) / qrPixelSize;
-        estimatedDistance *= distanceCalibrationMultiplier;
-
-        return Mathf.Clamp(estimatedDistance, minEstimatedDistanceMeters, maxEstimatedDistanceMeters);
+        return PlacementGeometry.GetPlacementDistance(imageWidth, qrPixelSize);
     }
 }
