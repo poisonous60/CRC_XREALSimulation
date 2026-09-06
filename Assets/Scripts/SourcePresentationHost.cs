@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Spawns the off-screen and proximity presentations named by SourcePresentationConfig.
+/// Spawns the proximity presentation named by SourcePresentationConfig.
 /// </summary>
 [DisallowMultipleComponent]
 public class SourcePresentationHost : MonoBehaviour
@@ -13,10 +13,8 @@ public class SourcePresentationHost : MonoBehaviour
     [Tooltip("Head camera the presentations project against. Empty means Camera.main.")]
     [SerializeField] private Camera head;
 
-    public SourcePresentation Offscreen => spawnedOffscreen;
     public SourcePresentation Proximity => spawnedProximity;
 
-    private SourcePresentation spawnedOffscreen;
     private SourcePresentation spawnedProximity;
 
     private void Start()
@@ -40,7 +38,6 @@ public class SourcePresentationHost : MonoBehaviour
             return;
         }
 
-        spawnedOffscreen = Spawn(config.OffscreenPrefab, "Offscreen");
         spawnedProximity = Spawn(config.ProximityPrefab, "Proximity");
     }
 

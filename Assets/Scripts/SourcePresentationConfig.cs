@@ -44,8 +44,8 @@ public class SourcePresentationConfig : ScriptableObject
     [SerializeField] private Color unknownColor = new Color(0.65f, 0.65f, 0.65f, 1f);
 
     [Header("(b) Off-screen Cue")]
-    [Tooltip("Cue shown while the source is outside the view. Empty draws no cue.")]
-    [SerializeField] private SourcePresentation offscreenPrefab;
+    [Tooltip("Look of one off-screen indicator. Empty keeps the built-in arrow and detector id.")]
+    [SerializeField] private OffscreenIndicatorView offscreenPrefab;
 
     [Header("(c) Proximity Information")]
     [Tooltip("Information shown as the user approaches. Empty draws nothing.")]
@@ -54,7 +54,7 @@ public class SourcePresentationConfig : ScriptableObject
     public GameObject MarkerPrefab => markerPrefab;
     public float MarkerSizeMeters => Mathf.Max(MinimumMarkerSizeMeters, markerSizeMeters);
     public Color UnknownColor => unknownColor;
-    public SourcePresentation OffscreenPrefab => offscreenPrefab;
+    public OffscreenIndicatorView OffscreenPrefab => offscreenPrefab;
     public SourcePresentation ProximityPrefab => proximityPrefab;
 
     // Statics survive entering play mode when Reload Domain is off, so drop the cache here.

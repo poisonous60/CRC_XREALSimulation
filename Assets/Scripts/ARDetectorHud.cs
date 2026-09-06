@@ -42,7 +42,6 @@ public class ARDetectorHud : MonoBehaviour
 
     [Header("Off-screen Indicators")]
     [SerializeField, Range(0f, 0.15f)] private float screenEdgeMargin = 0.05f;
-    [SerializeField, Min(10f)] private float indicatorFontSize = 28f;
 
     private readonly Dictionary<string, float> latestDeviceData =
         new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
@@ -55,7 +54,7 @@ public class ARDetectorHud : MonoBehaviour
     private readonly List<DetectorWorldMarkerManager.DetectorHudMarkerState> markerStates =
         new List<DetectorWorldMarkerManager.DetectorHudMarkerState>();
     private readonly List<OffscreenState> offscreenStates = new List<OffscreenState>();
-    private readonly List<TMP_Text> indicatorPool = new List<TMP_Text>();
+    private readonly List<OffscreenIndicatorView> indicatorPool = new List<OffscreenIndicatorView>();
     private readonly StringBuilder textBuilder = new StringBuilder(512);
 
     private GameObject canvasObject;
@@ -550,7 +549,7 @@ public class ARDetectorHud : MonoBehaviour
             if (inside)
                 continue;
 
-            CardinalDirection direction = GetCardinalDirection(markerStates[i].worldPosition, viewport);
+            OffscreenEdge direction = GetCardinalDirection(markerStates[i].worldPosition, viewport);
             offscreenStates.Add(new OffscreenState
             {
                 marker = markerStates[i],
@@ -578,13 +577,13 @@ public class ARDetectorHud : MonoBehaviour
 
             switch (state.direction)
             {
-                case CardinalDirection.Left:
+                case OffscreenEdge.Left:
                     stackIndex = leftCount++;
                     break;
-                case CardinalDirection.Right:
+                case OffscreenEdge.Right:
                     stackIndex = rightCount++;
                     break;
-                case CardinalDirection.Up:
+                case OffscreenEdge.Up:
                     stackIndex = upCount++;
                     break;
                 default:
@@ -596,7 +595,7 @@ public class ARDetectorHud : MonoBehaviour
         }
     }
 
-    private CardinalDirection GetCardinalDirection(Vector3 worldPosition, Vector3 viewport)
+    private OffscreenEdge GetCardinalDirection(Vector3 worldPosition, Vector3 viewport)
     {
         if (viewport.z > 0f)
         {
@@ -604,9 +603,9 @@ public class ARDetectorHud : MonoBehaviour
             float verticalOverflow = Mathf.Abs(viewport.y - 0.5f) / 0.5f;
 
             if (horizontalOverflow >= verticalOverflow)
-                return viewport.x < 0.5f ? CardinalDirection.Left : CardinalDirection.Right;
+                return viewport.x < 0.5f ? OffscreenEdge.Left : OffscreenEdge.Right;
 
-            return viewport.y < 0.5f ? CardinalDirection.Down : CardinalDirection.Up;
+            return viewport.y < 0.5f ? OffscreenEdge.Down : OffscreenEdge.Up;
         }
 
         Vector3 local = targetCamera.transform.InverseTransformPoint(worldPosition);
@@ -614,74 +613,72 @@ public class ARDetectorHud : MonoBehaviour
         float verticalAngle = Mathf.Atan2(local.y, Mathf.Max(0.0001f, Mathf.Abs(local.z))) * Mathf.Rad2Deg;
 
         if (Mathf.Abs(horizontalAngle) >= Mathf.Abs(verticalAngle))
-            return horizontalAngle < 0f ? CardinalDirection.Left : CardinalDirection.Right;
+            return horizontalAngle < 0f ? OffscreenEdge.Left : OffscreenEdge.Right;
 
-        return verticalAngle < 0f ? CardinalDirection.Down : CardinalDirection.Up;
+        return verticalAngle < 0f ? OffscreenEdge.Down : OffscreenEdge.Up;
     }
 
     private void EnsureIndicatorPoolSize(int count)
     {
+        OffscreenIndicatorView prefab = null;
+
+        if (SourcePresentationConfig.TryLoad(out SourcePresentationConfig presentationConfig))
+            prefab = presentationConfig.OffscreenPrefab;
+
         while (indicatorPool.Count < count)
         {
-            GameObject indicatorObject = new GameObject(
-                $"DetectorDirection_{indicatorPool.Count}",
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(TextMeshProUGUI));
-            indicatorObject.layer = 5;
+            OffscreenIndicatorView view = prefab != null
+                ? Instantiate(prefab)
+                : CreateDefaultIndicatorView();
 
-            RectTransform rect = indicatorObject.GetComponent<RectTransform>();
-            rect.SetParent(indicatorLayer, false);
-            rect.sizeDelta = new Vector2(420f, 64f);
-
-            TextMeshProUGUI text = indicatorObject.GetComponent<TextMeshProUGUI>();
-            text.fontSize = indicatorFontSize;
-            text.textWrappingMode = TextWrappingModes.NoWrap;
-            text.raycastTarget = false;
-            text.outlineColor = Color.black;
-            text.outlineWidth = 0.25f;
-            indicatorPool.Add(text);
+            view.name = $"DetectorDirection_{indicatorPool.Count}";
+            view.gameObject.layer = 5;
+            ((RectTransform)view.transform).SetParent(indicatorLayer, false);
+            indicatorPool.Add(view);
         }
     }
 
-    private void ConfigureIndicator(TMP_Text indicator, OffscreenState state, int stackIndex)
+    private OffscreenIndicatorView CreateDefaultIndicatorView()
     {
-        RectTransform rect = indicator.rectTransform;
+        GameObject indicatorObject = new GameObject(
+            "DetectorDirection",
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(TextMeshProUGUI),
+            typeof(TextOffscreenIndicatorView));
+
+        return indicatorObject.GetComponent<TextOffscreenIndicatorView>();
+    }
+
+    private void ConfigureIndicator(OffscreenIndicatorView indicator, OffscreenState state, int stackIndex)
+    {
+        indicator.Show(state.marker.detectorId, state.direction, state.marker.color);
+
+        RectTransform rect = (RectTransform)indicator.transform;
         float stackOffset = AlternatingStackOffset(stackIndex, 0.055f);
-        float rightIndicatorMinimumY = GetHudAvoidanceTop();
-        float bottomIndicatorMaximumX = GetHudAvoidanceLeft();
         Vector2 anchor;
 
         switch (state.direction)
         {
-            case CardinalDirection.Left:
+            case OffscreenEdge.Left:
                 anchor = new Vector2(
                     screenEdgeMargin,
                     Mathf.Clamp(state.viewport.z > 0f ? state.viewport.y + stackOffset : 0.5f + stackOffset, 0.15f, 0.85f));
-                rect.pivot = new Vector2(0f, 0.5f);
-                indicator.alignment = TextAlignmentOptions.MidlineLeft;
-                indicator.text = $"<  {state.marker.detectorId}";
                 break;
 
-            case CardinalDirection.Right:
+            case OffscreenEdge.Right:
                 anchor = new Vector2(
                     1f - screenEdgeMargin,
                     Mathf.Clamp(
                         state.viewport.z > 0f ? state.viewport.y + stackOffset : 0.5f + stackOffset,
-                        rightIndicatorMinimumY,
+                        GetHudAvoidanceTop(),
                         0.85f));
-                rect.pivot = new Vector2(1f, 0.5f);
-                indicator.alignment = TextAlignmentOptions.MidlineRight;
-                indicator.text = $"{state.marker.detectorId}  >";
                 break;
 
-            case CardinalDirection.Up:
+            case OffscreenEdge.Up:
                 anchor = new Vector2(
                     Mathf.Clamp(state.viewport.z > 0f ? state.viewport.x + stackOffset : 0.5f + stackOffset, 0.15f, 0.85f),
                     1f - screenEdgeMargin);
-                rect.pivot = new Vector2(0.5f, 1f);
-                indicator.alignment = TextAlignmentOptions.Top;
-                indicator.text = $"^  {state.marker.detectorId}";
                 break;
 
             default:
@@ -689,18 +686,14 @@ public class ARDetectorHud : MonoBehaviour
                     Mathf.Clamp(
                         state.viewport.z > 0f ? state.viewport.x + stackOffset : 0.5f + stackOffset,
                         0.15f,
-                        bottomIndicatorMaximumX),
+                        GetHudAvoidanceLeft()),
                     screenEdgeMargin);
-                rect.pivot = new Vector2(0.5f, 0f);
-                indicator.alignment = TextAlignmentOptions.Bottom;
-                indicator.text = $"v  {state.marker.detectorId}";
                 break;
         }
 
         rect.anchorMin = anchor;
         rect.anchorMax = anchor;
         rect.anchoredPosition = Vector2.zero;
-        indicator.color = state.marker.color;
     }
 
     private float GetHudAvoidanceTop()
@@ -732,18 +725,10 @@ public class ARDetectorHud : MonoBehaviour
         return value.Replace("<", "[").Replace(">", "]");
     }
 
-    private enum CardinalDirection
-    {
-        Left,
-        Right,
-        Up,
-        Down
-    }
-
     private struct OffscreenState
     {
         public DetectorWorldMarkerManager.DetectorHudMarkerState marker;
         public Vector3 viewport;
-        public CardinalDirection direction;
+        public OffscreenEdge direction;
     }
 }

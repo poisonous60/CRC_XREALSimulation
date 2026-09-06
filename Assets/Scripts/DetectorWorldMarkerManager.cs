@@ -2432,11 +2432,8 @@ public class DetectorWorldMarkerManager : MonoBehaviour
 
         root.name = $"DetectorMarker_{detectorId}";
 
-        if (presentationConfig != null &&
-            (presentationConfig.OffscreenPrefab != null || presentationConfig.ProximityPrefab != null))
-        {
+        if (presentationConfig != null && presentationConfig.ProximityPrefab != null)
             root.AddComponent<SourcePresentationHost>();
-        }
         root.transform.position = worldPosition;
         root.transform.localScale = Vector3.one * fixedMarkerSize;
 
