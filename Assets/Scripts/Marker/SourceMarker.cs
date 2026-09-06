@@ -10,6 +10,7 @@ using UnityEngine.XR.ARFoundation;
 public class SourceMarker : MonoBehaviour
 {
     public string detectorId;
+    public SourceMarkerVisual visual;
     public Renderer renderer;
     public Renderer[] bodyRenderers;
     public TMP_Text label;

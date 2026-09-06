@@ -91,4 +91,11 @@ public partial class DetectorWorldMarkerManager
         foreach (var pair in markers)
             ApplyMarkerVisibility(pair.Value);
     }
+
+    private float GetLatestRadiationValue(string detectorId, float fallbackValue)
+    {
+        return IsRadiationSnapshotFresh() && latestAggregateRadiationValue >= 0f
+            ? latestAggregateRadiationValue
+            : fallbackValue;
+    }
 }

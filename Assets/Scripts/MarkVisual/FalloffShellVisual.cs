@@ -1,21 +1,27 @@
-using System;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
-using UnityEngine.XR.ARFoundation;
-using UnityEngine.XR.ARSubsystems;
 
-public partial class DetectorWorldMarkerManager
+/// <summary>
+/// Faint inverse-square shells drawn around one marker.
+/// </summary>
+[DisallowMultipleComponent]
+public class FalloffShellVisual : MonoBehaviour
 {
+    private SourceMarker marker;
+    private MarkerVisualSettings settings;
 
-    private void UpdateFalloffShellVisuals(
-        SourceMarker marker,
-        float centerCps,
-        RadiationRiskBand centerBand)
+    public void Initialize(SourceMarker owner, MarkerVisualSettings visualSettings)
     {
-        HideFalloffShells(marker);
+        marker = owner;
+        settings = visualSettings;
+    }
 
-        if (!showFalloffShells ||
+    public void Refresh(float centerCps, RadiationRiskBand centerBand)
+    {
+        Hide();
+
+        if (settings == null ||
+            !settings.showFalloffShells ||
             marker == null ||
             !marker.isPlaced ||
             (centerBand != RadiationRiskBand.Red && centerBand != RadiationRiskBand.Yellow))
@@ -23,22 +29,22 @@ public partial class DetectorWorldMarkerManager
             return;
         }
 
-        EnsureFalloffShellPool(marker);
+        EnsurePool();
         if (marker.falloffShells == null || marker.falloffShells.Count == 0)
             return;
 
-        float referenceDistance = Mathf.Max(0.01f, falloffReferenceDistanceMeters);
-        float centerRadius = Mathf.Max(0.01f, fixedMarkerSize * 0.5f);
-        float maximumRadius = Mathf.Max(centerRadius, falloffMaxRadiusMeters);
+        float referenceDistance = Mathf.Max(0.01f, settings.falloffReferenceDistanceMeters);
+        float centerRadius = Mathf.Max(0.01f, settings.fixedMarkerSize * 0.5f);
+        float maximumRadius = Mathf.Max(centerRadius, settings.falloffMaxRadiusMeters);
         int availableShells = Mathf.Min(
-            Mathf.Clamp(maxFalloffShells, 1, 3),
+            Mathf.Clamp(settings.maxFalloffShells, 1, 3),
             marker.falloffShells.Count);
         int shellIndex = 0;
         float lastConfiguredRadius = centerRadius;
 
-        float hiddenThreshold = Mathf.Max(0.001f, hiddenMaxCps);
-        float greenThreshold = Mathf.Max(hiddenThreshold, greenMaxCps);
-        float redThreshold = Mathf.Max(greenThreshold, dangerThresholdCps);
+        float hiddenThreshold = Mathf.Max(0.001f, settings.hiddenMaxCps);
+        float greenThreshold = Mathf.Max(hiddenThreshold, settings.greenMaxCps);
+        float redThreshold = Mathf.Max(greenThreshold, settings.dangerThresholdCps);
         float redBoundaryRadius =
             referenceDistance * Mathf.Sqrt(centerCps / redThreshold);
         float yellowBoundaryRadius =
@@ -51,8 +57,7 @@ public partial class DetectorWorldMarkerManager
         // a much stronger reading expands that red zone correctly.
         if (centerBand == RadiationRiskBand.Red)
         {
-            TryConfigureFalloffBoundary(
-                marker,
+            TryConfigureBoundary(
                 ref shellIndex,
                 ref lastConfiguredRadius,
                 availableShells,
@@ -61,8 +66,7 @@ public partial class DetectorWorldMarkerManager
                 RadiationRiskBand.Red);
         }
 
-        TryConfigureFalloffBoundary(
-            marker,
+        TryConfigureBoundary(
             ref shellIndex,
             ref lastConfiguredRadius,
             availableShells,
@@ -70,8 +74,7 @@ public partial class DetectorWorldMarkerManager
             maximumRadius,
             RadiationRiskBand.Yellow);
 
-        TryConfigureFalloffBoundary(
-            marker,
+        TryConfigureBoundary(
             ref shellIndex,
             ref lastConfiguredRadius,
             availableShells,
@@ -85,9 +88,8 @@ public partial class DetectorWorldMarkerManager
         if (greenBoundaryRadius > maximumRadius && shellIndex < availableShells)
         {
             float ratio = referenceDistance / Mathf.Max(maximumRadius, referenceDistance);
-            RadiationRiskBand endpointBand = GetRiskBand(centerCps * ratio * ratio);
-            TryConfigureFalloffBoundary(
-                marker,
+            RadiationRiskBand endpointBand = MarkerRisk.GetBand(centerCps * ratio * ratio, settings);
+            TryConfigureBoundary(
                 ref shellIndex,
                 ref lastConfiguredRadius,
                 availableShells,
@@ -97,8 +99,36 @@ public partial class DetectorWorldMarkerManager
         }
     }
 
-    private bool TryConfigureFalloffBoundary(
-        SourceMarker marker,
+    public void Hide()
+    {
+        if (marker == null || marker.falloffShells == null)
+            return;
+
+        for (int i = 0; i < marker.falloffShells.Count; i++)
+        {
+            FalloffShellInfo shell = marker.falloffShells[i];
+            if (shell != null)
+                shell.visualRequested = false;
+        }
+    }
+
+    public void DestroyMaterials()
+    {
+        if (marker == null || marker.falloffShells == null)
+            return;
+
+        for (int i = 0; i < marker.falloffShells.Count; i++)
+        {
+            FalloffShellInfo shell = marker.falloffShells[i];
+            if (shell == null || shell.material == null)
+                continue;
+
+            Destroy(shell.material);
+            shell.material = null;
+        }
+    }
+
+    private bool TryConfigureBoundary(
         ref int shellIndex,
         ref float lastConfiguredRadius,
         int availableShells,
@@ -115,28 +145,28 @@ public partial class DetectorWorldMarkerManager
             return false;
         }
 
-        ConfigureFalloffShell(marker, shellIndex, radiusMeters, band);
+        ConfigureShell(shellIndex, radiusMeters, band);
         shellIndex++;
         lastConfiguredRadius = radiusMeters;
         return true;
     }
 
-    private void EnsureFalloffShellPool(SourceMarker marker)
+    private void EnsurePool()
     {
-        if (marker == null || marker.root == null)
+        if (marker == null)
             return;
 
         if (marker.falloffShells == null)
             marker.falloffShells = new List<FalloffShellInfo>();
 
-        int desiredCount = Mathf.Clamp(maxFalloffShells, 1, 3);
+        int desiredCount = Mathf.Clamp(settings.maxFalloffShells, 1, 3);
         while (marker.falloffShells.Count < desiredCount)
         {
             int shellIndex = marker.falloffShells.Count;
             GameObject shellObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             shellObject.name = $"FalloffShell_{shellIndex + 1}";
-            shellObject.layer = marker.root.layer;
-            shellObject.transform.SetParent(marker.root.transform, false);
+            shellObject.layer = gameObject.layer;
+            shellObject.transform.SetParent(transform, false);
             shellObject.transform.localPosition = Vector3.zero;
             shellObject.transform.localRotation = Quaternion.identity;
             shellObject.transform.localScale = Vector3.one;
@@ -152,7 +182,7 @@ public partial class DetectorWorldMarkerManager
             Material shellMaterial = null;
             if (shellRenderer != null)
             {
-                Shader shader = GetDetectorTransparentShader();
+                Shader shader = MarkerMaterials.GetDetectorTransparentShader();
                 if (shader == null)
                     shader = Shader.Find("Universal Render Pipeline/Lit");
                 if (shader == null)
@@ -178,11 +208,7 @@ public partial class DetectorWorldMarkerManager
         }
     }
 
-    private void ConfigureFalloffShell(
-        SourceMarker marker,
-        int shellIndex,
-        float radiusMeters,
-        RadiationRiskBand band)
+    private void ConfigureShell(int shellIndex, float radiusMeters, RadiationRiskBand band)
     {
         if (marker == null ||
             marker.falloffShells == null ||
@@ -196,52 +222,19 @@ public partial class DetectorWorldMarkerManager
         if (shell == null || shell.root == null)
             return;
 
-        float centerDiameter = Mathf.Max(0.001f, fixedMarkerSize);
+        float centerDiameter = Mathf.Max(0.001f, settings.fixedMarkerSize);
         shell.root.transform.localPosition = Vector3.zero;
         shell.root.transform.localRotation = Quaternion.identity;
         shell.root.transform.localScale =
             Vector3.one * ((radiusMeters * 2f) / centerDiameter);
 
-        Color color = GetRiskColorForBand(band);
-        color.a = falloffShellAlpha;
+        Color color = MarkerRisk.GetColorForBand(band, settings);
+        color.a = settings.falloffShellAlpha;
 
         // Inner shells render after outer shells; the center sphere renders last.
-        int queueOffset = Mathf.Clamp(maxFalloffShells, 1, 3) - shellIndex;
+        int queueOffset = Mathf.Clamp(settings.maxFalloffShells, 1, 3) - shellIndex;
         shell.material =
-            SetRendererTransparentColor(shell.renderer, color, queueOffset, true);
+            MarkerMaterials.SetRendererTransparentColor(shell.renderer, color, queueOffset, true, settings);
         shell.visualRequested = true;
-    }
-
-    private Color GetRiskColorForBand(RadiationRiskBand band)
-    {
-        switch (band)
-        {
-            case RadiationRiskBand.Red:
-                return GetRiskColor(Mathf.Max(0f, dangerThresholdCps) + 1f);
-            case RadiationRiskBand.Yellow:
-                return GetRiskColor(Mathf.Max(0f, greenMaxCps) + 1f);
-            default:
-                return GetRiskColor(Mathf.Max(0f, greenMaxCps));
-        }
-    }
-
-    private float GetLatestRadiationValue(string detectorId, float fallbackValue)
-    {
-        return IsRadiationSnapshotFresh() && latestAggregateRadiationValue >= 0f
-            ? latestAggregateRadiationValue
-            : fallbackValue;
-    }
-
-    private void HideFalloffShells(SourceMarker marker)
-    {
-        if (marker == null || marker.falloffShells == null)
-            return;
-
-        for (int i = 0; i < marker.falloffShells.Count; i++)
-        {
-            FalloffShellInfo shell = marker.falloffShells[i];
-            if (shell != null)
-                shell.visualRequested = false;
-        }
     }
 }

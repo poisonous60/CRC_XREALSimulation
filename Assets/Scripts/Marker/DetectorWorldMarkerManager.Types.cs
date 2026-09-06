@@ -8,16 +8,6 @@ using UnityEngine.XR.ARSubsystems;
 public partial class DetectorWorldMarkerManager
 {
 
-    private enum RadiationRiskBand
-    {
-        Unknown,
-        Hidden,
-        Green,
-        Yellow,
-        Red
-    }
-
-
     public struct DetectorHudMarkerState
     {
         public string detectorId;
