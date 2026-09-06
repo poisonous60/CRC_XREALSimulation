@@ -13,14 +13,11 @@ public partial class DetectorWorldMarkerManager
         EnsureSpatialAnchorManager();
         SubscribeSpatialEvents();
 
-        if (spatialAnchorManager != null && spatialAnchorManager.IsReady())
-        {
-            spatialAnchorManager.CreateAndSaveAnchorForDetector(detectorId, worldPosition, worldRotation);
-            return true;
-        }
-
-        Debug.LogWarning("[DetectorWorldMarkerManager] Spatial anchor not created. Manager or ARAnchorManager missing; using coordinate fallback.");
-        return false;
+        return MarkerAnchorBinder.TryCreateAnchor(
+            spatialAnchorManager,
+            detectorId,
+            worldPosition,
+            worldRotation);
     }
 
     private void FinalizeSpatialBinding(
@@ -38,14 +35,10 @@ public partial class DetectorWorldMarkerManager
         // reference frame. Do not create a second detector-local pose source.
         if (roomCoordinateSystem != null && roomCoordinateSystem.IsCalibrated)
         {
-            if (marker.root != null)
-                marker.root.transform.SetParent(transform, true);
-
             if (spatialAnchorManager != null)
                 spatialAnchorManager.InvalidatePendingOperationForDetector(detectorId);
 
-            marker.anchor = null;
-            marker.anchorState = "room coordinate saved";
+            MarkerAnchorBinder.DetachToRoom(marker, transform, "room coordinate saved");
             return;
         }
 
@@ -97,23 +90,7 @@ public partial class DetectorWorldMarkerManager
         if (!markers.TryGetValue(detectorId, out SourceMarker marker) || marker == null)
             return;
 
-        marker.anchor = anchor;
-        marker.anchorGuid = persistentGuid;
-        marker.anchorState = "anchor saved";
-        marker.savedPosition = anchor.transform.position;
-        marker.isFollowingPlacementOrigin = false;
-        marker.isPlaced = true;
-
-        if (marker.root != null)
-        {
-            marker.root.transform.SetPositionAndRotation(anchor.transform.position, anchor.transform.rotation);
-            if (parentMarkerToAnchor)
-            {
-                marker.root.transform.SetParent(anchor.transform, false);
-                marker.root.transform.localPosition = Vector3.zero;
-                marker.root.transform.localRotation = Quaternion.identity;
-            }
-        }
+        MarkerAnchorBinder.BindToAnchor(marker, anchor, persistentGuid, "anchor saved", parentMarkerToAnchor);
 
         UpdateMarkerVisual(marker, marker.lastRadiationValue);
         Debug.Log($"[DetectorWorldMarkerManager] Anchor created and saved: {detectorId}, {persistentGuid}");
@@ -141,23 +118,7 @@ public partial class DetectorWorldMarkerManager
         if (marker == null)
             return;
 
-        marker.anchor = anchor;
-        marker.anchorGuid = persistentGuid;
-        marker.anchorState = "anchor loaded";
-        marker.savedPosition = anchor.transform.position;
-        marker.isFollowingPlacementOrigin = false;
-        marker.isPlaced = true;
-
-        if (marker.root != null)
-        {
-            marker.root.transform.SetPositionAndRotation(anchor.transform.position, anchor.transform.rotation);
-            if (parentMarkerToAnchor)
-            {
-                marker.root.transform.SetParent(anchor.transform, false);
-                marker.root.transform.localPosition = Vector3.zero;
-                marker.root.transform.localRotation = Quaternion.identity;
-            }
-        }
+        MarkerAnchorBinder.BindToAnchor(marker, anchor, persistentGuid, "anchor loaded", parentMarkerToAnchor);
 
         float restoredRadiationValue = marker.lastRadiationValue;
         if (coordinateDatabase != null &&
@@ -178,11 +139,7 @@ public partial class DetectorWorldMarkerManager
                 anchor.transform.position,
                 anchor.transform.rotation);
 
-            if (marker.root != null)
-                marker.root.transform.SetParent(transform, true);
-
-            marker.anchor = null;
-            marker.anchorState = "room coordinate captured";
+            MarkerAnchorBinder.DetachToRoom(marker, transform, "room coordinate captured");
         }
 
         UpdateMarkerVisual(
