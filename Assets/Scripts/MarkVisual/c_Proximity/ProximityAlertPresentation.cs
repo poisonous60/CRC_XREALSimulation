@@ -63,7 +63,8 @@ public class ProximityAlertPresentation : SourcePresentation
         canvasRect = (RectTransform)canvasObject.transform;
         canvasRect.localScale = Vector3.one;
 
-        GameObject glowObject = new GameObject("EdgeGlow", typeof(RectTransform));
+        // RequireComponent is editor-only, so a script-built Graphic gets no CanvasRenderer.
+        GameObject glowObject = new GameObject("EdgeGlow", typeof(RectTransform), typeof(CanvasRenderer));
         glowObject.transform.SetParent(canvasObject.transform, false);
 
         RectTransform glowRect = (RectTransform)glowObject.transform;
