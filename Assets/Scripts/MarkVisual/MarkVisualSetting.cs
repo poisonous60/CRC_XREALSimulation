@@ -47,6 +47,18 @@ public class MarkVisualSetting : ScriptableObject
     [Tooltip("Look of one off-screen indicator. Empty keeps the built-in arrow and detector id.")]
     [SerializeField] private OffscreenIndicatorView offscreenPrefab;
 
+    [Tooltip("How much of the cue's own size is held inside the screen edge. 1 keeps the whole cue inside, 0 lets it straddle the edge. Applies to the ellipse border only.")]
+    [SerializeField, Range(0f, 1f)] private float offscreenEdgeInset = 1f;
+
+    [Tooltip("Arrow size in canvas units. X is the length from the back edge to the tip, Y is the width of the back edge. Read by views that draw their own arrow.")]
+    [SerializeField] private Vector2 offscreenArrowSize = new Vector2(38f, 80f);
+
+    [Tooltip("Color the cue by the detector's reading. Off uses Offscreen Color instead.")]
+    [SerializeField] private bool offscreenUseStatusColor = true;
+
+    [Tooltip("Cue color used when Offscreen Use Status Color is off.")]
+    [SerializeField] private Color offscreenColor = Color.white;
+
     [Header("(c) Proximity Information")]
     [Tooltip("Every look shown as the user approaches. All entries are spawned together. Empty draws nothing.")]
     [SerializeField] private List<SourcePresentation> proximityPrefabs = new List<SourcePresentation>();
@@ -74,6 +86,10 @@ public class MarkVisualSetting : ScriptableObject
     public float MarkerSizeMeters => Mathf.Max(MinimumMarkerSizeMeters, markerSizeMeters);
     public Color UnknownColor => unknownColor;
     public OffscreenIndicatorView OffscreenPrefab => offscreenPrefab;
+    public float OffscreenEdgeInset => offscreenEdgeInset;
+    public Vector2 OffscreenArrowSize => offscreenArrowSize;
+    public bool OffscreenUseStatusColor => offscreenUseStatusColor;
+    public Color OffscreenColor => offscreenColor;
     public IReadOnlyList<SourcePresentation> ProximityPrefabs => proximityPrefabs;
 
     public bool HasProximityPrefab()

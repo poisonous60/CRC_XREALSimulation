@@ -21,10 +21,14 @@ MonoBehaviour:
     color: {r: 1, g: 1, b: 0, a: 1}
   aboveHighestBandColor: {r: 1, g: 0, b: 0, a: 1}
   unknownColor: {r: 0.65, g: 0.65, b: 0.65, a: 1}
-  offscreenPrefab: {fileID: 4695216491298785069, guid: e1af9c7a7ac51854bb358e65528a8e05, type: 3}
+  offscreenPrefab: {fileID: 6457213621338847519, guid: b6a01c77268041644b940158b41a3671, type: 3}
+  offscreenEdgeInset: 1
+  offscreenArrowSize: {x: 38, y: 80}
+  offscreenUseStatusColor: 1
+  offscreenColor: {r: 1, g: 1, b: 1, a: 1}
   proximityPrefabs:
-  - {fileID: 7865643288987669811, guid: 122dde21e47bb554399be3cf9bb401e0, type: 3}
   - {fileID: 2983836566073144877, guid: 6e3223cf616fd4a4b823a9720ca97d20, type: 3}
+  - {fileID: 7865643288987669811, guid: 122dde21e47bb554399be3cf9bb401e0, type: 3}
   showFalloffShells: 0
   falloffReferenceDistanceMeters: 0.08
   falloffMaxRadiusMeters: 5

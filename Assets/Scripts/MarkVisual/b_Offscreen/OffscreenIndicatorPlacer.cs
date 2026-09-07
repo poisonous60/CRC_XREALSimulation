@@ -23,6 +23,7 @@ public class OffscreenIndicatorPlacer
     private float screenEdgeMargin = 0.05f;
     private float hudAvoidanceTop = 0.15f;
     private float hudAvoidanceLeft = 0.85f;
+    private float edgeInsetFraction = 1f;
 
     public void Configure(
         Camera camera,
@@ -129,7 +130,10 @@ public class OffscreenIndicatorPlacer
         OffscreenIndicatorView prefab = null;
 
         if (MarkVisualSetting.TryLoad(out MarkVisualSetting visualSetting))
+        {
             prefab = visualSetting.OffscreenPrefab;
+            edgeInsetFraction = visualSetting.OffscreenEdgeInset;
+        }
 
         while (indicatorPool.Count < count)
         {
@@ -226,9 +230,9 @@ public class OffscreenIndicatorPlacer
         fromCenter.Normalize();
         fromCenter = RotateDegrees(fromCenter, AlternatingStackOffset(stackIndex, 7f));
 
-        float semiAxis = Mathf.Max(0.01f, 0.5f - screenEdgeMargin);
+        Vector2 semiAxes = SafeSemiAxes(rect);
         Vector2 center = new Vector2(0.5f, 0.5f);
-        Vector2 anchor = center + fromCenter * semiAxis;
+        Vector2 anchor = center + Vector2.Scale(fromCenter, semiAxes);
 
         if (anchor.x > 0.5f)
             anchor.y = Mathf.Max(anchor.y, hudAvoidanceTop);
@@ -238,10 +242,10 @@ public class OffscreenIndicatorPlacer
 
         Vector2 corrected = anchor - center;
         if (corrected.sqrMagnitude > 0.000001f)
-            anchor = center + corrected.normalized * semiAxis;
+            anchor = center + Vector2.Scale(corrected.normalized, semiAxes);
 
-        anchor.x = Mathf.Clamp(anchor.x, screenEdgeMargin, 1f - screenEdgeMargin);
-        anchor.y = Mathf.Clamp(anchor.y, screenEdgeMargin, 1f - screenEdgeMargin);
+        anchor.x = Mathf.Clamp(anchor.x, center.x - semiAxes.x, center.x + semiAxes.x);
+        anchor.y = Mathf.Clamp(anchor.y, center.y - semiAxes.y, center.y + semiAxes.y);
 
         rect.anchorMin = anchor;
         rect.anchorMax = anchor;
@@ -250,6 +254,29 @@ public class OffscreenIndicatorPlacer
         float aspect = targetCamera != null && targetCamera.aspect > 0f ? targetCamera.aspect : 1f;
         Vector2 screenDirection = new Vector2(fromCenter.x * aspect, fromCenter.y);
         indicator.SetDirection(Mathf.Atan2(screenDirection.y, screenDirection.x) * Mathf.Rad2Deg);
+    }
+
+    // Rule from HUD Indicator v2 IndicatorMath.Inset (MIT, Copyright (c) 2022 Fernando Lincoln).
+    private Vector2 SafeSemiAxes(RectTransform rect)
+    {
+        Vector2 halfSize = Vector2.zero;
+
+        if (indicatorLayer != null)
+        {
+            Rect layerRect = indicatorLayer.rect;
+            Vector2 cueSize = rect.rect.size;
+
+            if (layerRect.width > 0f && layerRect.height > 0f)
+            {
+                halfSize = new Vector2(
+                    cueSize.x * 0.5f / layerRect.width,
+                    cueSize.y * 0.5f / layerRect.height) * Mathf.Clamp01(edgeInsetFraction);
+            }
+        }
+
+        return new Vector2(
+            Mathf.Max(0.01f, 0.5f - screenEdgeMargin - halfSize.x),
+            Mathf.Max(0.01f, 0.5f - screenEdgeMargin - halfSize.y));
     }
 
     private static Vector2 RotateDegrees(Vector2 direction, float degrees)

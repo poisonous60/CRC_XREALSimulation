@@ -9,6 +9,7 @@ Read before working. Located in `e:\260618\HCI개론\3d effect test\docs\`.
 - `crc-xreal-authored-assets.md` : what was hand-written vs generated.
 - `crc-xreal-commit-history.md` : all 35 commits.
 - `crc-xreal-hardware-and-editor-testing.md` : hardware support, editor limits.
+- `E:\260618\HCI\CRC_outside\HOWTO_marker_look.md` : how a new (a)/(b)/(c) look is built and swapped. Read before making one.
 
 ## How to answer
 
