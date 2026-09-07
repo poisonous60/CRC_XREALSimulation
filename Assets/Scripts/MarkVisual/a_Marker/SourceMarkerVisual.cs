@@ -88,15 +88,18 @@ public class SourceMarkerVisual : MonoBehaviour
             MarkerMaterials.SetRendererTransparentColor(marker.renderer, color, 10, false, settings);
 
         // Keep the logical marker root alive so HUD distance, gaze selection,
-        // Cancel, and anchor state continue to work even when 0-2 CPS hides the
-        // center sphere. An unknown preview stays visible for placement; an
-        // already placed detector with no valid reading stays visually quiet.
-        // A gray preview is an aiming aid, so it ignores the CPS bands entirely
-        // and stays visible even at a hidden 0-2 CPS reading.
+        // Cancel, and anchor state continue to work even when Hide Low Cps hides
+        // the center sphere at 0-2 CPS. An unknown preview stays visible for
+        // placement; an already placed detector with no valid reading stays
+        // visually quiet. A gray preview is an aiming aid, so it ignores the CPS
+        // bands entirely and stays visible even at a hidden 0-2 CPS reading.
+        bool hideLowCps =
+            !MarkVisualConfig.TryLoad(out MarkVisualConfig config) || config.HideLowCps;
+
         marker.centerVisualRequested =
             useGrayPreview ||
             marker.isControllerMoving ||
-            (riskBand != RadiationRiskBand.Hidden &&
+            ((riskBand != RadiationRiskBand.Hidden || !hideLowCps) &&
              (riskBand != RadiationRiskBand.Unknown || !marker.isPlaced));
 
         if (shells != null)

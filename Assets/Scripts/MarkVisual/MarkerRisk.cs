@@ -30,13 +30,18 @@ public static class MarkerRisk
 
     public static Color GetColor(float radiationValue, MarkerVisualSettings settings)
     {
-        if (MarkVisualConfig.TryLoad(out MarkVisualConfig visualSetting) &&
-            visualSetting.TryGetStatusColor(radiationValue, out Color bandColor))
+        RadiationRiskBand band = GetBand(radiationValue, settings);
+
+        if (MarkVisualConfig.TryLoad(out MarkVisualConfig visualSetting))
         {
-            return WithMarkerAlpha(bandColor, settings);
+            if (band == RadiationRiskBand.Hidden)
+                return WithMarkerAlpha(visualSetting.LowCpsColor, settings);
+
+            if (visualSetting.TryGetStatusColor(radiationValue, out Color bandColor))
+                return WithMarkerAlpha(bandColor, settings);
         }
 
-        switch (GetBand(radiationValue, settings))
+        switch (band)
         {
             case RadiationRiskBand.Green:
             case RadiationRiskBand.Hidden:

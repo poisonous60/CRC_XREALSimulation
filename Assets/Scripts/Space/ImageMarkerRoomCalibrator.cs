@@ -29,7 +29,7 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
     private Camera glassesCamera;
     private bool subscribed;
     private bool guideShown;
-    private string lastRejectReason = "";
+    private bool cameraWarned;
 
     private void OnEnable()
     {
@@ -41,7 +41,7 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
 
         if (trackedImageManager == null)
         {
-            Debug.LogWarning("[ImageMarkerRoomCalibrator] No ARTrackedImageManager in the scene; the wall marker cannot place the room origin.");
+            Debug.LogWarning("[ImageMarkerRoomCalibrator] No ARTrackedImageManager in the scene; the marker cannot place the room origin.");
             return;
         }
 
@@ -75,7 +75,7 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
 
         guideShown = true;
         RoomCoordinateSystem.PublishStatus(
-            $"Look at the {markerName} wall marker to place the room origin",
+            $"Look at the {markerName} marker to place the room origin",
             Color.cyan);
     }
 
@@ -87,24 +87,13 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
         if (!TryFindMarker(args.added, out ARTrackedImage image) &&
             !TryFindMarker(args.updated, out image))
         {
-            Reject($"No tracked image named {markerName}. Seen: {DescribeImages(args)}", false);
-            return;
-        }
-
-        if (image.trackingState != TrackingState.Tracking)
-        {
-            Reject($"{image.referenceImage.name} seen with trackingState={image.trackingState}; waiting for Tracking", false);
             return;
         }
 
         if (!TryBuildRoomPose(image, out Pose worldPose))
             return;
 
-        if (roomCoordinateSystem.TryCalibrateFromPose(markerName, worldPose, out string message))
-        {
-            lastRejectReason = "";
-            Debug.Log($"[ImageMarkerRoomCalibrator] {message} from tracked image at {worldPose.position}");
-        }
+        roomCoordinateSystem.TryCalibrateFromPose(markerName, worldPose, out _);
     }
 
     private bool TryResolveRoomCoordinateSystem()
@@ -119,6 +108,9 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
     {
         foreach (ARTrackedImage candidate in images)
         {
+            if (candidate.trackingState != TrackingState.Tracking)
+                continue;
+
             if (string.Equals(candidate.referenceImage.name, markerName, StringComparison.OrdinalIgnoreCase))
             {
                 image = candidate;
@@ -143,10 +135,7 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
             lyingFlat ? imageTransform.forward : normal,
             Vector3.up);
         if (forward.sqrMagnitude < 0.0001f)
-        {
-            Reject($"{markerName} marker orientation is degenerate (up={imageTransform.up}, forward={imageTransform.forward})", true);
             return false;
-        }
 
         forward.Normalize();
 
@@ -157,7 +146,12 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
 
             if (glassesCamera == null)
             {
-                Reject("No main camera; the wall normal sign cannot be resolved", false);
+                if (!cameraWarned)
+                {
+                    cameraWarned = true;
+                    Debug.LogWarning("[ImageMarkerRoomCalibrator] No main camera; the wall normal sign cannot be resolved.");
+                }
+
                 return false;
             }
 
@@ -165,10 +159,7 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
                 glassesCamera.transform.position - imageTransform.position,
                 Vector3.up);
             if (viewerOffset.magnitude < MinimumViewerOffsetMeters)
-            {
-                Reject($"Viewer is {viewerOffset.magnitude:F2} m from the marker horizontally; need {MinimumViewerOffsetMeters} m", false);
                 return false;
-            }
 
             if (Vector3.Dot(forward, viewerOffset) < 0f)
                 forward = -forward;
@@ -176,26 +167,5 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
 
         worldPose = new Pose(imageTransform.position, Quaternion.LookRotation(forward, Vector3.up));
         return true;
-    }
-
-    private void Reject(string reason, bool showOnPanel)
-    {
-        if (string.Equals(reason, lastRejectReason, StringComparison.Ordinal))
-            return;
-
-        lastRejectReason = reason;
-        Debug.LogWarning($"[ImageMarkerRoomCalibrator] {reason}");
-        if (showOnPanel)
-            RoomCoordinateSystem.PublishStatus(reason, Color.yellow);
-    }
-
-    private static string DescribeImages(ARTrackablesChangedEventArgs<ARTrackedImage> args)
-    {
-        System.Text.StringBuilder builder = new System.Text.StringBuilder();
-        foreach (ARTrackedImage image in args.added)
-            builder.Append('+').Append(image.referenceImage.name).Append('/').Append(image.trackingState).Append(' ');
-        foreach (ARTrackedImage image in args.updated)
-            builder.Append('~').Append(image.referenceImage.name).Append('/').Append(image.trackingState).Append(' ');
-        return builder.Length > 0 ? builder.ToString().TrimEnd() : "none";
     }
 }

@@ -40,6 +40,12 @@ public class MarkVisualConfig : ScriptableObject
     [Tooltip("Color when the reading is missing or invalid, or when no band is set.")]
     [SerializeField] private Color unknownColor = new Color(0.65f, 0.65f, 0.65f, 1f);
 
+    [Tooltip("ON = a reading at or below the marker manager's Hidden Max Cps hides the marker center. OFF = the center is drawn in Low Cps Color instead.")]
+    [SerializeField] private bool hideLowCps = true;
+
+    [Tooltip("Color at or below the marker manager's Hidden Max Cps. The center shows it only while Hide Low Cps is off; the off-screen cue always does.")]
+    [SerializeField] private Color lowCpsColor = new Color(0.65f, 0.65f, 0.65f, 1f);
+
     [Header("(b) Off-screen Cue")]
     [Tooltip("Look of one off-screen indicator. Empty keeps the built-in arrow and detector id.")]
     [SerializeField] private OffscreenIndicatorView offscreenPrefab;
@@ -79,6 +85,8 @@ public class MarkVisualConfig : ScriptableObject
     public GameObject MarkerPrefab => markerPrefab;
     public float MarkerSizeMeters => Mathf.Max(MinimumMarkerSizeMeters, markerSizeMeters);
     public Color UnknownColor => unknownColor;
+    public bool HideLowCps => hideLowCps;
+    public Color LowCpsColor => lowCpsColor;
     public OffscreenIndicatorView OffscreenPrefab => offscreenPrefab;
     public float OffscreenEdgeInset => offscreenEdgeInset;
     public bool OffscreenUseStatusColor => offscreenUseStatusColor;
