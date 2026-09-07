@@ -952,7 +952,6 @@ MonoBehaviour:
   trackedImageManager: {fileID: 0}
   roomCoordinateSystem: {fileID: 0}
   markerName: ROOM_ORIGIN
-  markerNormalIsLocalUp: 1
 --- !u!20 &609993946 stripped
 Camera:
   m_CorrespondingSourceObject: {fileID: 9011500862288746601, guid: 3182b5074a6bf3d4887a44a38cbb9cb6, type: 3}

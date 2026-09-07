@@ -5,13 +5,13 @@ using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 
 /// <summary>
-/// Places the room origin on the tracked ROOM_ORIGIN wall image at its first sighting, replacing the QR aim-and-place step.
+/// Places the room origin on the tracked ROOM_ORIGIN image, on a wall or lying flat, at its first sighting.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
 {
-    // Same limit as RoomCoordinateSystem.maximumWallNormalVerticalDot, so a marker
-    // lying on a table is rejected the way a floor plane is.
+    // Same limit as RoomCoordinateSystem.maximumWallNormalVerticalDot: above it the
+    // marker counts as lying flat and its printed top edge, not the normal, sets +Z.
     private const float MaximumNormalVerticalDot = 0.30f;
     private const float MinimumViewerOffsetMeters = 0.08f;
 
@@ -26,14 +26,10 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
     [Tooltip("Reference image name in the library. Also used as the room id, so records saved by the wall-QR flow stay compatible.")]
     [SerializeField] private string markerName = "ROOM_ORIGIN";
 
-    [Tooltip("On: the image normal is the trackable's local +Y. Off: local +Z. Flip this when the restored marker comes back rotated about the vertical.")]
-    [SerializeField] private bool markerNormalIsLocalUp = true;
-
     private Camera glassesCamera;
     private bool subscribed;
     private bool guideShown;
-    private bool tiltWarned;
-    private bool cameraWarned;
+    private string lastRejectReason = "";
 
     private void OnEnable()
     {
@@ -91,6 +87,13 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
         if (!TryFindMarker(args.added, out ARTrackedImage image) &&
             !TryFindMarker(args.updated, out image))
         {
+            Reject($"No tracked image named {markerName}. Seen: {DescribeImages(args)}", false);
+            return;
+        }
+
+        if (image.trackingState != TrackingState.Tracking)
+        {
+            Reject($"{image.referenceImage.name} seen with trackingState={image.trackingState}; waiting for Tracking", false);
             return;
         }
 
@@ -98,7 +101,10 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
             return;
 
         if (roomCoordinateSystem.TryCalibrateFromPose(markerName, worldPose, out string message))
+        {
+            lastRejectReason = "";
             Debug.Log($"[ImageMarkerRoomCalibrator] {message} from tracked image at {worldPose.position}");
+        }
     }
 
     private bool TryResolveRoomCoordinateSystem()
@@ -113,9 +119,6 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
     {
         foreach (ARTrackedImage candidate in images)
         {
-            if (candidate.trackingState != TrackingState.Tracking)
-                continue;
-
             if (string.Equals(candidate.referenceImage.name, markerName, StringComparison.OrdinalIgnoreCase))
             {
                 image = candidate;
@@ -131,47 +134,68 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
     {
         worldPose = Pose.identity;
         Transform imageTransform = image.transform;
-        Vector3 normal = markerNormalIsLocalUp ? imageTransform.up : imageTransform.forward;
+        // AR Foundation convention, confirmed on the Air 2 Ultra (device log 2026-09-07):
+        // the image lies in the trackable's XZ plane, local +Y is its normal, +Z its top edge.
+        Vector3 normal = imageTransform.up;
+        bool lyingFlat = Mathf.Abs(Vector3.Dot(normal, Vector3.up)) > MaximumNormalVerticalDot;
 
-        if (Mathf.Abs(Vector3.Dot(normal, Vector3.up)) > MaximumNormalVerticalDot)
-        {
-            if (!tiltWarned)
-            {
-                tiltWarned = true;
-                RoomCoordinateSystem.PublishStatus(
-                    $"{markerName} marker is not on a vertical wall. Check markerNormalIsLocalUp",
-                    Color.yellow);
-            }
-
-            return false;
-        }
-
-        Vector3 forward = Vector3.ProjectOnPlane(normal, Vector3.up).normalized;
-
-        if (glassesCamera == null)
-            glassesCamera = Camera.main;
-
-        if (glassesCamera == null)
-        {
-            if (!cameraWarned)
-            {
-                cameraWarned = true;
-                Debug.LogWarning("[ImageMarkerRoomCalibrator] No main camera; the wall normal sign cannot be resolved.");
-            }
-
-            return false;
-        }
-
-        Vector3 viewerOffset = Vector3.ProjectOnPlane(
-            glassesCamera.transform.position - imageTransform.position,
+        Vector3 forward = Vector3.ProjectOnPlane(
+            lyingFlat ? imageTransform.forward : normal,
             Vector3.up);
-        if (viewerOffset.magnitude < MinimumViewerOffsetMeters)
+        if (forward.sqrMagnitude < 0.0001f)
+        {
+            Reject($"{markerName} marker orientation is degenerate (up={imageTransform.up}, forward={imageTransform.forward})", true);
             return false;
+        }
 
-        if (Vector3.Dot(forward, viewerOffset) < 0f)
-            forward = -forward;
+        forward.Normalize();
+
+        if (!lyingFlat)
+        {
+            if (glassesCamera == null)
+                glassesCamera = Camera.main;
+
+            if (glassesCamera == null)
+            {
+                Reject("No main camera; the wall normal sign cannot be resolved", false);
+                return false;
+            }
+
+            Vector3 viewerOffset = Vector3.ProjectOnPlane(
+                glassesCamera.transform.position - imageTransform.position,
+                Vector3.up);
+            if (viewerOffset.magnitude < MinimumViewerOffsetMeters)
+            {
+                Reject($"Viewer is {viewerOffset.magnitude:F2} m from the marker horizontally; need {MinimumViewerOffsetMeters} m", false);
+                return false;
+            }
+
+            if (Vector3.Dot(forward, viewerOffset) < 0f)
+                forward = -forward;
+        }
 
         worldPose = new Pose(imageTransform.position, Quaternion.LookRotation(forward, Vector3.up));
         return true;
+    }
+
+    private void Reject(string reason, bool showOnPanel)
+    {
+        if (string.Equals(reason, lastRejectReason, StringComparison.Ordinal))
+            return;
+
+        lastRejectReason = reason;
+        Debug.LogWarning($"[ImageMarkerRoomCalibrator] {reason}");
+        if (showOnPanel)
+            RoomCoordinateSystem.PublishStatus(reason, Color.yellow);
+    }
+
+    private static string DescribeImages(ARTrackablesChangedEventArgs<ARTrackedImage> args)
+    {
+        System.Text.StringBuilder builder = new System.Text.StringBuilder();
+        foreach (ARTrackedImage image in args.added)
+            builder.Append('+').Append(image.referenceImage.name).Append('/').Append(image.trackingState).Append(' ');
+        foreach (ARTrackedImage image in args.updated)
+            builder.Append('~').Append(image.referenceImage.name).Append('/').Append(image.trackingState).Append(' ');
+        return builder.Length > 0 ? builder.ToString().TrimEnd() : "none";
     }
 }
