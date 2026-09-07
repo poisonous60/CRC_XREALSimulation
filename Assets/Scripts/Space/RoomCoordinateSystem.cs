@@ -198,23 +198,38 @@ public sealed class RoomCoordinateSystem : MonoBehaviour
             return false;
         }
 
+        return TryCalibrateFromPose(pendingRoomId, pendingWorldPose, out message);
+    }
+
+    // The pose must already follow the frame convention: gravity up, +Z from the
+    // wall into the room. Records saved under the same room id are read back in it.
+    public bool TryCalibrateFromPose(string roomIdentifier, Pose worldPose, out string message)
+    {
+        if (string.IsNullOrWhiteSpace(roomIdentifier))
+        {
+            message = "Room identifier is empty";
+            PublishStatus(message, Color.yellow);
+            return false;
+        }
+
         EnsureCoordinateFrame();
         coordinateFrame.gameObject.SetActive(true);
         coordinateFrame.SetPositionAndRotation(
-            pendingWorldPose.position,
-            pendingWorldPose.rotation);
+            worldPose.position,
+            worldPose.rotation);
         coordinateFrame.localScale = Vector3.one;
 
-        RoomId = pendingRoomId;
+        RoomId = roomIdentifier.Trim();
         LastRoomId = RoomId;
         IsCalibrated = true;
-        HasPendingPlacement = false;
-        hasValidPendingPose = false;
-        pendingRoomId = "";
-        SetPreviewVisible(false);
+        ClearPendingPlacement();
 
         PlayerPrefs.SetString(LastRoomIdPlayerPrefsKey, RoomId);
         PlayerPrefs.Save();
+
+        // A preview still following gaze would be snapped by the restore below while
+        // its placement session stays live, so a later Cancel would undo the restore.
+        markerManager?.CancelActivePlacementOnly();
 
         int capturedCount = markerManager != null
             ? markerManager.CapturePlacedDetectorRoomCoordinates(this)
