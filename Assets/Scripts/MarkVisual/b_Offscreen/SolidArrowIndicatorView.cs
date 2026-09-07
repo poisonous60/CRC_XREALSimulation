@@ -35,13 +35,10 @@ public class SolidArrowIndicatorView : OffscreenIndicatorView
 
         ((RectTransform)transform).sizeDelta = rectSize;
 
-        if (MarkVisualSetting.TryLoad(out MarkVisualSetting config))
+        if (MarkVisualConfig.TryLoad(out MarkVisualConfig config))
         {
             useStatusColor = config.OffscreenUseStatusColor;
             configuredColor = config.OffscreenColor;
-
-            if (arrow != null)
-                arrow.SetSize(config.OffscreenArrowSize.x, config.OffscreenArrowSize.y);
         }
 
         if (arrow != null)

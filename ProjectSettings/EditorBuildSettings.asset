@@ -11,6 +11,15 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/PersonalTests/6DoF/6DoFTestScene.unity
     guid: 34e82aab9c7b2a74190a16719bc2a885
+  - enabled: 0
+    path: Assets/Scenes/Overview.unity
+    guid: 4a8c21bf011461343afef8f0cc403668
+  - enabled: 0
+    path: Assets/Scenes/ImageTrackingTest.unity
+    guid: a7ef0980955ec084bbd2f6ce12273313
+  - enabled: 0
+    path: Assets/Scenes/EditorTestXR.unity
+    guid: ba0513167a37f43419af58694308a993
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 2e0fd753937dbc2408bf6f7a404426dd, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 289c1b55c9541489481df5cc06664110, type: 3}

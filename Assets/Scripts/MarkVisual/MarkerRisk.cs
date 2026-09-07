@@ -30,7 +30,7 @@ public static class MarkerRisk
 
     public static Color GetColor(float radiationValue, MarkerVisualSettings settings)
     {
-        if (MarkVisualSetting.TryLoad(out MarkVisualSetting visualSetting) &&
+        if (MarkVisualConfig.TryLoad(out MarkVisualConfig visualSetting) &&
             visualSetting.TryGetStatusColor(radiationValue, out Color bandColor))
         {
             return WithMarkerAlpha(bandColor, settings);

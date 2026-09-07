@@ -18,13 +18,13 @@ public class StatusColorBand
 /// <summary>
 /// Project-wide slots for the source marker's look, loaded from Resources by every scene.
 /// </summary>
-[CreateAssetMenu(fileName = "MarkVisualSetting", menuName = "RadVis/Mark Visual Setting")]
-public class MarkVisualSetting : ScriptableObject
+[CreateAssetMenu(fileName = "MarkVisualConfig", menuName = "RadVis/Mark Visual Config")]
+public class MarkVisualConfig : ScriptableObject
 {
-    private const string ResourceName = "MarkVisualSetting";
+    private const string ResourceName = "MarkVisualConfig";
     private const float MinimumMarkerSizeMeters = 0.001f;
 
-    private static MarkVisualSetting loaded;
+    private static MarkVisualConfig loaded;
 
     [Header("(a) Marker")]
     [Tooltip("Replaces the whole marker object. Empty keeps the built-in sphere and its transparent shader.")]
@@ -34,13 +34,10 @@ public class MarkVisualSetting : ScriptableObject
     [SerializeField, Min(MinimumMarkerSizeMeters)] private float markerSizeMeters = 0.2f;
 
     [Header("Status Color by CPS")]
-    [Tooltip("Bands from low to high CPS. Press + to add one.")]
+    [Tooltip("Bands from low to high CPS. Press + to add one. A reading past the last band keeps that band's color.")]
     [SerializeField] private List<StatusColorBand> statusBands = new List<StatusColorBand>();
 
-    [Tooltip("Color above the highest band.")]
-    [SerializeField] private Color aboveHighestBandColor = Color.red;
-
-    [Tooltip("Color when the reading is missing or invalid.")]
+    [Tooltip("Color when the reading is missing or invalid, or when no band is set.")]
     [SerializeField] private Color unknownColor = new Color(0.65f, 0.65f, 0.65f, 1f);
 
     [Header("(b) Off-screen Cue")]
@@ -49,9 +46,6 @@ public class MarkVisualSetting : ScriptableObject
 
     [Tooltip("How much of the cue's own size is held inside the screen edge. 1 keeps the whole cue inside, 0 lets it straddle the edge. Applies to the ellipse border only.")]
     [SerializeField, Range(0f, 1f)] private float offscreenEdgeInset = 1f;
-
-    [Tooltip("Arrow size in canvas units. X is the length from the back edge to the tip, Y is the width of the back edge. Read by views that draw their own arrow.")]
-    [SerializeField] private Vector2 offscreenArrowSize = new Vector2(38f, 80f);
 
     [Tooltip("Color the cue by the detector's reading. Off uses Offscreen Color instead.")]
     [SerializeField] private bool offscreenUseStatusColor = true;
@@ -87,7 +81,6 @@ public class MarkVisualSetting : ScriptableObject
     public Color UnknownColor => unknownColor;
     public OffscreenIndicatorView OffscreenPrefab => offscreenPrefab;
     public float OffscreenEdgeInset => offscreenEdgeInset;
-    public Vector2 OffscreenArrowSize => offscreenArrowSize;
     public bool OffscreenUseStatusColor => offscreenUseStatusColor;
     public Color OffscreenColor => offscreenColor;
     public IReadOnlyList<SourcePresentation> ProximityPrefabs => proximityPrefabs;
@@ -119,10 +112,10 @@ public class MarkVisualSetting : ScriptableObject
         loaded = null;
     }
 
-    public static bool TryLoad(out MarkVisualSetting config)
+    public static bool TryLoad(out MarkVisualConfig config)
     {
         if (loaded == null)
-            loaded = Resources.Load<MarkVisualSetting>(ResourceName);
+            loaded = Resources.Load<MarkVisualConfig>(ResourceName);
 
         config = loaded;
         return config != null;
@@ -132,45 +125,48 @@ public class MarkVisualSetting : ScriptableObject
     {
         color = unknownColor;
 
-        if (!HasValidBand())
-            return false;
+        float highestBound = GetHighestBandBound();
+
+        if (float.IsNegativeInfinity(highestBound))
+            return true;
 
         if (float.IsNaN(countsPerSecond) || float.IsInfinity(countsPerSecond) || countsPerSecond < 0f)
             return true;
 
+        // Clamping to the last bound keeps a reading past every band inside that band.
+        float reading = Mathf.Min(countsPerSecond, highestBound);
         float bestBound = float.PositiveInfinity;
-        bool matched = false;
 
         for (int index = 0; index < statusBands.Count; index++)
         {
             StatusColorBand band = statusBands[index];
 
-            if (band == null || countsPerSecond > band.MaxCps || band.MaxCps >= bestBound)
+            if (band == null || reading > band.MaxCps || band.MaxCps >= bestBound)
                 continue;
 
             bestBound = band.MaxCps;
             color = band.Color;
-            matched = true;
         }
-
-        if (!matched)
-            color = aboveHighestBandColor;
 
         return true;
     }
 
-    private bool HasValidBand()
+    private float GetHighestBandBound()
     {
+        float highest = float.NegativeInfinity;
+
         if (statusBands == null)
-            return false;
+            return highest;
 
         for (int index = 0; index < statusBands.Count; index++)
         {
-            if (statusBands[index] != null)
-                return true;
+            StatusColorBand band = statusBands[index];
+
+            if (band != null)
+                highest = Mathf.Max(highest, band.MaxCps);
         }
 
-        return false;
+        return highest;
     }
 
     private void OnValidate()

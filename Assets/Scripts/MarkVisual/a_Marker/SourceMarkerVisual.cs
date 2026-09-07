@@ -10,11 +10,13 @@ public class SourceMarkerVisual : MonoBehaviour
     private SourceMarker marker;
     private MarkerVisualSettings settings;
     private FalloffShellVisual shells;
+    private MarkerAlphaOverride alphaOverride;
 
     public void Initialize(SourceMarker owner, MarkerVisualSettings visualSettings)
     {
         marker = owner;
         settings = visualSettings;
+        alphaOverride = GetComponentInChildren<MarkerAlphaOverride>(true);
 
         if (shells == null)
             shells = gameObject.AddComponent<FalloffShellVisual>();
@@ -65,7 +67,7 @@ public class SourceMarkerVisual : MonoBehaviour
             : MarkerRisk.GetColor(radiationValue, settings);
         color.a = useGrayPreview
             ? Mathf.Clamp01(settings.previewSphereAlpha)
-            : settings.markerAlpha;
+            : (alphaOverride != null ? alphaOverride.MarkerAlpha : settings.markerAlpha);
 
         // Highlight only the center material. Scaling the marker root would also
         // scale every inverse-square falloff shell and falsify its real-world radius.

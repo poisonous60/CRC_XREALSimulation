@@ -25,13 +25,13 @@ public partial class DetectorWorldMarkerManager
             visualSettings.hiddenMaxCps = hiddenMaxCps;
             visualSettings.greenMaxCps = greenMaxCps;
             visualSettings.dangerThresholdCps = dangerThresholdCps;
-            if (MarkVisualSetting.TryLoad(out MarkVisualSetting markVisualSetting))
+            if (MarkVisualConfig.TryLoad(out MarkVisualConfig markVisualConfig))
             {
-                visualSettings.showFalloffShells = markVisualSetting.ShowFalloffShells;
-                visualSettings.falloffReferenceDistanceMeters = markVisualSetting.FalloffReferenceDistanceMeters;
-                visualSettings.falloffMaxRadiusMeters = markVisualSetting.FalloffMaxRadiusMeters;
-                visualSettings.falloffShellAlpha = markVisualSetting.FalloffShellAlpha;
-                visualSettings.maxFalloffShells = markVisualSetting.MaxFalloffShells;
+                visualSettings.showFalloffShells = markVisualConfig.ShowFalloffShells;
+                visualSettings.falloffReferenceDistanceMeters = markVisualConfig.FalloffReferenceDistanceMeters;
+                visualSettings.falloffMaxRadiusMeters = markVisualConfig.FalloffMaxRadiusMeters;
+                visualSettings.falloffShellAlpha = markVisualConfig.FalloffShellAlpha;
+                visualSettings.maxFalloffShells = markVisualConfig.MaxFalloffShells;
             }
             visualSettings.showLabel = showLabel;
             visualSettings.labelFontSize = labelFontSize;
@@ -98,7 +98,7 @@ public partial class DetectorWorldMarkerManager
 
         Transform markerParent = parent != null && parentMarkerToAnchor ? parent : transform;
 
-        MarkVisualSetting.TryLoad(out MarkVisualSetting visualSetting);
+        MarkVisualConfig.TryLoad(out MarkVisualConfig visualSetting);
 
         GameObject prefab = markerPrefab;
 
@@ -153,7 +153,7 @@ public partial class DetectorWorldMarkerManager
         if (markerPrefab != null)
             return true;
 
-        return MarkVisualSetting.TryLoad(out MarkVisualSetting visualSetting)
+        return MarkVisualConfig.TryLoad(out MarkVisualConfig visualSetting)
             && visualSetting.MarkerPrefab != null;
     }
 

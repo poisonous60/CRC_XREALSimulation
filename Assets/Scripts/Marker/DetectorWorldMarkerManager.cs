@@ -233,7 +233,7 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
     {
         radiationSnapshot.Reset();
 
-        if (MarkVisualSetting.TryLoad(out MarkVisualSetting presentationConfig))
+        if (MarkVisualConfig.TryLoad(out MarkVisualConfig presentationConfig))
         {
             fixedMarkerSize = presentationConfig.MarkerSizeMeters;
             showLabel = presentationConfig.ShowLabel;

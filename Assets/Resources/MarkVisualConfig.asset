@@ -10,24 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dfd3f835e48bd1748a20c259102e8a4e, type: 3}
-  m_Name: MarkVisualSetting
+  m_Name: MarkVisualConfig
   m_EditorClassIdentifier: 
-  markerPrefab: {fileID: 7793960699173686856, guid: b22f7029d99a7e64dae145f35935cff2, type: 3}
+  markerPrefab: {fileID: 6387016307566893731, guid: f6d69e8b4d22668459be4f0909556c34, type: 3}
   markerSizeMeters: 0.2
   statusBands:
   - maxCps: 10
     color: {r: 0, g: 1, b: 0, a: 1}
-  - maxCps: 350
+  - maxCps: 20
     color: {r: 1, g: 1, b: 0, a: 1}
-  aboveHighestBandColor: {r: 1, g: 0, b: 0, a: 1}
+  - maxCps: 1000
+    color: {r: 1, g: 0, b: 0, a: 1}
   unknownColor: {r: 0.65, g: 0.65, b: 0.65, a: 1}
-  offscreenPrefab: {fileID: 6457213621338847519, guid: b6a01c77268041644b940158b41a3671, type: 3}
+  offscreenPrefab: {fileID: 6457213621338847519, guid: 2ba04508320a4fe4bbb5d8977d93ac2b, type: 3}
   offscreenEdgeInset: 1
-  offscreenArrowSize: {x: 38, y: 80}
   offscreenUseStatusColor: 1
   offscreenColor: {r: 1, g: 1, b: 1, a: 1}
   proximityPrefabs:
-  - {fileID: 2983836566073144877, guid: 6e3223cf616fd4a4b823a9720ca97d20, type: 3}
   - {fileID: 7865643288987669811, guid: 122dde21e47bb554399be3cf9bb401e0, type: 3}
   showFalloffShells: 0
   falloffReferenceDistanceMeters: 0.08

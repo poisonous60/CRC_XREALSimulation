@@ -21,22 +21,13 @@ public class OffscreenIndicatorPlacer
     private Camera targetCamera;
     private RectTransform indicatorLayer;
     private float screenEdgeMargin = 0.05f;
-    private float hudAvoidanceTop = 0.15f;
-    private float hudAvoidanceLeft = 0.85f;
     private float edgeInsetFraction = 1f;
 
-    public void Configure(
-        Camera camera,
-        RectTransform layer,
-        float edgeMargin,
-        float avoidanceTop,
-        float avoidanceLeft)
+    public void Configure(Camera camera, RectTransform layer, float edgeMargin)
     {
         targetCamera = camera;
         indicatorLayer = layer;
         screenEdgeMargin = edgeMargin;
-        hudAvoidanceTop = avoidanceTop;
-        hudAvoidanceLeft = avoidanceLeft;
     }
 
     public void Refresh(List<DetectorWorldMarkerManager.DetectorHudMarkerState> markerStates)
@@ -129,7 +120,7 @@ public class OffscreenIndicatorPlacer
     {
         OffscreenIndicatorView prefab = null;
 
-        if (MarkVisualSetting.TryLoad(out MarkVisualSetting visualSetting))
+        if (MarkVisualConfig.TryLoad(out MarkVisualConfig visualSetting))
         {
             prefab = visualSetting.OffscreenPrefab;
             edgeInsetFraction = visualSetting.OffscreenEdgeInset;
@@ -186,10 +177,7 @@ public class OffscreenIndicatorPlacer
             case OffscreenEdge.Right:
                 anchor = new Vector2(
                     1f - screenEdgeMargin,
-                    Mathf.Clamp(
-                        state.viewport.z > 0f ? state.viewport.y + stackOffset : 0.5f + stackOffset,
-                        hudAvoidanceTop,
-                        0.85f));
+                    Mathf.Clamp(state.viewport.z > 0f ? state.viewport.y + stackOffset : 0.5f + stackOffset, 0.15f, 0.85f));
                 break;
 
             case OffscreenEdge.Up:
@@ -200,10 +188,7 @@ public class OffscreenIndicatorPlacer
 
             default:
                 anchor = new Vector2(
-                    Mathf.Clamp(
-                        state.viewport.z > 0f ? state.viewport.x + stackOffset : 0.5f + stackOffset,
-                        0.15f,
-                        hudAvoidanceLeft),
+                    Mathf.Clamp(state.viewport.z > 0f ? state.viewport.x + stackOffset : 0.5f + stackOffset, 0.15f, 0.85f),
                     screenEdgeMargin);
                 break;
         }
@@ -230,22 +215,7 @@ public class OffscreenIndicatorPlacer
         fromCenter.Normalize();
         fromCenter = RotateDegrees(fromCenter, AlternatingStackOffset(stackIndex, 7f));
 
-        Vector2 semiAxes = SafeSemiAxes(rect);
-        Vector2 center = new Vector2(0.5f, 0.5f);
-        Vector2 anchor = center + Vector2.Scale(fromCenter, semiAxes);
-
-        if (anchor.x > 0.5f)
-            anchor.y = Mathf.Max(anchor.y, hudAvoidanceTop);
-
-        if (anchor.y < 0.5f)
-            anchor.x = Mathf.Min(anchor.x, hudAvoidanceLeft);
-
-        Vector2 corrected = anchor - center;
-        if (corrected.sqrMagnitude > 0.000001f)
-            anchor = center + Vector2.Scale(corrected.normalized, semiAxes);
-
-        anchor.x = Mathf.Clamp(anchor.x, center.x - semiAxes.x, center.x + semiAxes.x);
-        anchor.y = Mathf.Clamp(anchor.y, center.y - semiAxes.y, center.y + semiAxes.y);
+        Vector2 anchor = new Vector2(0.5f, 0.5f) + Vector2.Scale(fromCenter, SafeSemiAxes(rect));
 
         rect.anchorMin = anchor;
         rect.anchorMax = anchor;

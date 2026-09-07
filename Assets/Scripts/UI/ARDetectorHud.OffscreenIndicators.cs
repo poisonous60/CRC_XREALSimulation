@@ -6,25 +6,7 @@ public partial class ARDetectorHud
 
     private void UpdateOffscreenIndicators()
     {
-        offscreenIndicators.Configure(
-            targetCamera,
-            indicatorLayer,
-            screenEdgeMargin,
-            GetHudAvoidanceTop(),
-            GetHudAvoidanceLeft());
-
+        offscreenIndicators.Configure(targetCamera, indicatorLayer, screenEdgeMargin);
         offscreenIndicators.Refresh(markerStates);
-    }
-
-    private float GetHudAvoidanceTop()
-    {
-        float hudTop = hudViewportAnchor.y + hudPixelSize.y / ReferenceHeight;
-        return Mathf.Clamp(hudTop + 0.02f, 0.15f, 0.85f);
-    }
-
-    private float GetHudAvoidanceLeft()
-    {
-        float hudLeft = hudViewportAnchor.x - hudPixelSize.x / ReferenceWidth;
-        return Mathf.Clamp(hudLeft - 0.02f, 0.15f, 0.85f);
     }
 }
