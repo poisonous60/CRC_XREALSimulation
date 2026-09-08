@@ -85,10 +85,17 @@ public partial class ARDetectorHud
         float distance = Mathf.Max(0.2f, canvasDistanceMeters);
         Vector3 bottomLeft = targetCamera.ViewportToWorldPoint(new Vector3(0f, 0f, distance));
         Vector3 topLeft = targetCamera.ViewportToWorldPoint(new Vector3(0f, 1f, distance));
+        Vector3 bottomRight = targetCamera.ViewportToWorldPoint(new Vector3(1f, 0f, distance));
         Vector3 center = targetCamera.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, distance));
 
         float visibleWorldHeight = Vector3.Distance(bottomLeft, topLeft);
+        float visibleWorldWidth = Vector3.Distance(bottomLeft, bottomRight);
         float uniformScale = visibleWorldHeight / ReferenceHeight;
+
+        // The scale matches the height alone, so a fixed 16:9 width put the left and right
+        // edge anchors outside the viewport on any narrower aspect.
+        if (visibleWorldHeight > 0f)
+            canvasRect.sizeDelta = new Vector2(ReferenceHeight * visibleWorldWidth / visibleWorldHeight, ReferenceHeight);
 
         canvasRect.position = center;
         canvasRect.rotation = targetCamera.transform.rotation;

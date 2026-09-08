@@ -100,21 +100,22 @@ public class ScreenFillPresentation : SourcePresentation
 
         FollowHead();
 
-        Color fillColor = GetMarkerColor();
-        fillColor.a = config.FillAlpha * strength;
+        Color fillColor = GetFillColor();
+        fillColor.a = config.FillAlpha * config.EvaluateFade(strength);
         fill.color = fillColor;
     }
 
-    private Color GetMarkerColor()
+    private Color GetFillColor()
     {
-        if (owner != null &&
+        if (config.FollowStatusBand &&
+            owner != null &&
             MarkVisualConfig.TryLoad(out MarkVisualConfig visualConfig) &&
             visualConfig.TryGetStatusColor(owner.lastRadiationValue, out Color statusColor))
         {
             return statusColor;
         }
 
-        return Color.white;
+        return config.SolidColor;
     }
 
     // XREAL's projection is asymmetric, so the visible rect is sampled rather than derived

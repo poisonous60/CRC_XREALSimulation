@@ -15,3 +15,5 @@ MonoBehaviour:
   diameterMeters: 1.5
   referenceDistanceMeters: 3
   approachGrowth: 1
+  markerAlpha: 0.266
+  bloomBoost: 1

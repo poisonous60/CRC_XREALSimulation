@@ -1,12 +1,14 @@
 using UnityEngine;
 
 /// <summary>
-/// Sizes a circle marker from its own config, leaving the marker root scale to the manager.
+/// Sizes and shades a circle marker from its own config, leaving the marker root scale to the manager.
 /// </summary>
 [DisallowMultipleComponent]
 public class CircleMarkerVisual : MonoBehaviour
 {
     private const float MinimumRootScale = 0.0001f;
+
+    private static readonly int BloomBoostId = Shader.PropertyToID("_BloomBoost");
 
     [Header("Look")]
     [Tooltip("Size rule for this look. Empty leaves the mesh at its authored scale.")]
@@ -19,6 +21,24 @@ public class CircleMarkerVisual : MonoBehaviour
     [SerializeField] private Camera head;
 
     public CircleMarkerConfig Config => config;
+
+    // Runs before the manager builds SourceMarkerVisual, so the alpha it reads back
+    // off MarkerAlphaOverride is already the config's.
+    private void Awake()
+    {
+        if (config == null)
+            return;
+
+        MarkerAlphaOverride alphaOverride = GetComponent<MarkerAlphaOverride>();
+
+        if (alphaOverride != null)
+            alphaOverride.SetMarkerAlpha(config.MarkerAlpha);
+
+        Renderer circleRenderer = GetComponentInChildren<Renderer>(true);
+
+        if (circleRenderer != null)
+            circleRenderer.material.SetFloat(BloomBoostId, config.BloomBoost);
+    }
 
     private void LateUpdate()
     {

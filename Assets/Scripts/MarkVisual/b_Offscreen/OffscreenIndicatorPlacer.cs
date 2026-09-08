@@ -65,10 +65,17 @@ public class OffscreenIndicatorPlacer
 
         for (int i = 0; i < indicatorPool.Count; i++)
         {
-            bool active = i < offscreenStates.Count;
-            indicatorPool[i].gameObject.SetActive(active);
-            if (!active)
+            OffscreenIndicatorView indicator = indicatorPool[i];
+
+            if (i >= offscreenStates.Count)
+            {
+                if (indicator.gameObject.activeSelf && indicator.Hide())
+                    indicator.gameObject.SetActive(false);
+
                 continue;
+            }
+
+            indicator.gameObject.SetActive(true);
 
             OffscreenState state = offscreenStates[i];
             int stackIndex;

@@ -19,6 +19,13 @@ public abstract class OffscreenIndicatorView : MonoBehaviour
 
     public abstract void Show(string label, OffscreenEdge edge, Color color);
 
+    // Called every frame the detector is back on screen. A look that fades out returns false
+    // until it is done, and the placer leaves it active and calls again the next frame.
+    public virtual bool Hide()
+    {
+        return true;
+    }
+
     public virtual void SetDirection(float degrees)
     {
     }

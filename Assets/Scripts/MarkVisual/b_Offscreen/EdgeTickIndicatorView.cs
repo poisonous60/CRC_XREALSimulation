@@ -16,6 +16,9 @@ public class EdgeTickIndicatorView : OffscreenIndicatorView
     private OffscreenEdge currentEdge = OffscreenEdge.Left;
     private bool useStatusColor = true;
     private Color configuredColor = Color.white;
+    private Color baseColor = Color.white;
+    private float fadeProgress;
+    private bool showing;
 
     public EdgeTickConfig Config => config;
 
@@ -45,12 +48,21 @@ public class EdgeTickIndicatorView : OffscreenIndicatorView
             ((RectTransform)transform).sizeDelta = new Vector2(config.Length, config.Length);
     }
 
+    // A pooled tick that was deactivated fades in again from nothing.
+    private void OnEnable()
+    {
+        fadeProgress = 0f;
+        showing = false;
+    }
+
     public override void Show(string detectorId, OffscreenEdge edge, Color statusColor)
     {
         if (tick == null)
             return;
 
-        tick.color = useStatusColor ? statusColor : configuredColor;
+        showing = true;
+        baseColor = useStatusColor ? statusColor : configuredColor;
+        ApplyFadedColor();
         currentEdge = edge;
 
         if (config == null)
@@ -58,6 +70,13 @@ public class EdgeTickIndicatorView : OffscreenIndicatorView
 
         tickRect.sizeDelta = new Vector2(config.Length, config.Thickness);
         tickRect.localEulerAngles = new Vector3(0f, 0f, GetEdgeRotation(edge));
+    }
+
+    public override bool Hide()
+    {
+        showing = false;
+
+        return config == null || config.FadeSeconds <= 0f || fadeProgress <= 0f;
     }
 
     // The placer anchors this root after calling Show, so the offset has to wait until
@@ -68,6 +87,27 @@ public class EdgeTickIndicatorView : OffscreenIndicatorView
             return;
 
         tickRect.anchoredPosition = GetOutwardDirection(currentEdge) * config.EdgeOffset;
+
+        float target = showing ? 1f : 0f;
+
+        if (Mathf.Approximately(fadeProgress, target))
+            return;
+
+        fadeProgress = config.FadeSeconds > 0f
+            ? Mathf.MoveTowards(fadeProgress, target, Time.deltaTime / config.FadeSeconds)
+            : target;
+
+        ApplyFadedColor();
+    }
+
+    private void ApplyFadedColor()
+    {
+        Color faded = baseColor;
+
+        if (config != null && config.FadeSeconds > 0f)
+            faded.a *= config.EvaluateFade(fadeProgress);
+
+        tick.color = faded;
     }
 
     // Authored with the long axis on +X and the outward face on +Y, so one rotation
