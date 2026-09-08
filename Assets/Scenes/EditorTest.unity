@@ -3593,6 +3593,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1694366511}
   - component: {fileID: 1694366510}
+  - component: {fileID: 1694366512}
   m_Layer: 0
   m_Name: DetectorWorldMarkerManager
   m_TagString: Untagged
@@ -3615,6 +3616,7 @@ MonoBehaviour:
   placementOrigin: {fileID: 0}
   fallbackCamera: {fileID: 1196201720}
   markerPrefab: {fileID: 0}
+  sourceMarkerKey: SOURCE
   usePlaneIntersectionPlacement: 0
   planeManager: {fileID: 0}
   planeDetectionMode: 3
@@ -3661,16 +3663,11 @@ MonoBehaviour:
   fixedMarkerSize: 0.2
   markerAlpha: 0.18
   forceDedicatedTransparentShader: 1
-  showFalloffShells: 1
-  falloffReferenceDistanceMeters: 0.08
-  falloffMaxRadiusMeters: 5
-  falloffShellAlpha: 0.012
-  maxFalloffShells: 3
+  enableArGlassesHud: 1
+  arGlassesHud: {fileID: 0}
   showLabel: 0
   showDistanceInLabel: 1
   showAnchorStateInLabel: 1
-  enableArGlassesHud: 1
-  arGlassesHud: {fileID: 0}
   labelCameraOffsetMeters: {x: 0.16, y: -0.13, z: -0.01}
   labelWorldScale: 0.04
   labelFontSize: 4.5
@@ -3703,6 +3700,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1694366512
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1694366509}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed8e5e954343cde43bae18d5bb02e635, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: 35e7aebe995a2d14dbb167210d06086a, type: 2}
 --- !u!1 &1734734325
 GameObject:
   m_ObjectHideFlags: 0

@@ -21,10 +21,8 @@ public class StatusColorBand
 [CreateAssetMenu(fileName = "MarkVisualConfig", menuName = "RadVis/Mark Visual Config")]
 public class MarkVisualConfig : ScriptableObject
 {
-    private const string ResourceName = "MarkVisualConfig";
     private const float MinimumMarkerSizeMeters = 0.001f;
 
-    private static MarkVisualConfig loaded;
     private static MarkVisualConfig sceneOverride;
 
     [Header("(a) Marker")]
@@ -127,7 +125,6 @@ public class MarkVisualConfig : ScriptableObject
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetCache()
     {
-        loaded = null;
         sceneOverride = null;
     }
 
@@ -146,16 +143,7 @@ public class MarkVisualConfig : ScriptableObject
 
     public static bool TryLoad(out MarkVisualConfig config)
     {
-        if (sceneOverride != null)
-        {
-            config = sceneOverride;
-            return true;
-        }
-
-        if (loaded == null)
-            loaded = Resources.Load<MarkVisualConfig>(ResourceName);
-
-        config = loaded;
+        config = sceneOverride;
         return config != null;
     }
 

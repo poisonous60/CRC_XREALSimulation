@@ -35,7 +35,7 @@ public class SourcePresentationHost : MonoBehaviour
         if (!MarkVisualConfig.TryLoad(out MarkVisualConfig config))
         {
             Debug.LogWarning(
-                $"[SourcePresentationHost] {name} found no MarkVisualConfig under a Resources folder.");
+                $"[SourcePresentationHost] {name} found no MarkVisualConfig; this scene needs a MarkVisualConfigOverride.");
             return;
         }
 

@@ -1,14 +1,14 @@
 using UnityEngine;
 
 /// <summary>
-/// Makes this scene use its own MarkVisualConfig instead of the one in Resources.
+/// Hands this scene its MarkVisualConfig. A scene without one draws the built-in sphere.
 /// </summary>
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(-1000)]
 public sealed class MarkVisualConfigOverride : MonoBehaviour
 {
     [Header("Look")]
-    [Tooltip("Config this scene uses. Empty falls back to the Resources asset every other scene loads.")]
+    [Tooltip("Config this scene uses. Empty leaves the scene with no config at all, so the marker falls back to the built-in sphere.")]
     [SerializeField] private MarkVisualConfig config;
 
     public MarkVisualConfig Config => config;
@@ -17,7 +17,7 @@ public sealed class MarkVisualConfigOverride : MonoBehaviour
     {
         if (config == null)
         {
-            Debug.LogWarning($"[MarkVisualConfigOverride] {name} has no config; the Resources asset stays in use.");
+            Debug.LogWarning($"[MarkVisualConfigOverride] {name} has no config; this scene draws the built-in sphere.");
             return;
         }
 
