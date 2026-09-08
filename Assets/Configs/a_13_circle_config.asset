@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69cc7cfaff9564c4ab4ae7489f48e65e, type: 3}
   m_Name: a_13_circle_config
   m_EditorClassIdentifier: 
-  diameterMeters: 0.04
-  referenceDistanceMeters: 0.5
+  diameterMeters: 1.5
+  referenceDistanceMeters: 3
   approachGrowth: 1

@@ -785,6 +785,7 @@ GameObject:
   - component: {fileID: 588933901}
   - component: {fileID: 588933902}
   - component: {fileID: 588933903}
+  - component: {fileID: 588933904}
   m_Layer: 0
   m_Name: DetectorWorldMarkerManager
   m_TagString: Untagged
@@ -952,6 +953,22 @@ MonoBehaviour:
   trackedImageManager: {fileID: 0}
   roomCoordinateSystem: {fileID: 0}
   markerName: ROOM_ORIGIN
+  realignIntervalSeconds: 0.5
+  realignPositionThresholdMeters: 0.01
+  realignRotationThresholdDegrees: 1
+--- !u!114 &588933904
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 588933898}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed8e5e954343cde43bae18d5bb02e635, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: b11206d3cedbf5b4082b0f86d5e84e79, type: 2}
 --- !u!20 &609993946 stripped
 Camera:
   m_CorrespondingSourceObject: {fileID: 9011500862288746601, guid: 3182b5074a6bf3d4887a44a38cbb9cb6, type: 3}
