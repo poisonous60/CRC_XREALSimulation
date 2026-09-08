@@ -1,0 +1,133 @@
+using UnityEngine;
+using UnityEngine.UI;
+
+/// <summary>
+/// (c) proximity information as a threshold: inside the trigger radius the whole view takes the marker's color.
+/// </summary>
+[DisallowMultipleComponent]
+public class ScreenFillPresentation : SourcePresentation
+{
+    [Header("Look")]
+    [Tooltip("Trigger radius and opacity for this look. Empty draws nothing.")]
+    [SerializeField] private ScreenFillConfig config;
+
+    [Header("Placement")]
+    [Tooltip("Distance from the head at which the fill canvas is parked.")]
+    [SerializeField, Min(0.2f)] private float canvasDistanceMeters = 1.5f;
+
+    private Transform source;
+    private Camera head;
+    private SourceMarker owner;
+    private Canvas fillCanvas;
+    private RectTransform canvasRect;
+    private Image fill;
+    private float strength;
+
+    public ScreenFillConfig Config => config;
+
+    public override void Bind(Transform sourceTransform, Camera headCamera)
+    {
+        source = sourceTransform;
+        head = headCamera;
+        owner = GetComponentInParent<SourceMarker>();
+
+        if (config == null)
+        {
+            Debug.LogWarning($"[ScreenFillPresentation] {name} has no config; nothing is drawn.");
+            return;
+        }
+
+        EnsureCanvas();
+    }
+
+    private void EnsureCanvas()
+    {
+        if (fillCanvas != null || head == null)
+            return;
+
+        GameObject canvasObject = new GameObject("ScreenFillCanvas", typeof(Canvas));
+        fillCanvas = canvasObject.GetComponent<Canvas>();
+        fillCanvas.renderMode = RenderMode.WorldSpace;
+        fillCanvas.worldCamera = head;
+
+        canvasRect = (RectTransform)canvasObject.transform;
+        canvasRect.localScale = Vector3.one;
+
+        // RequireComponent is editor-only, so a script-built Graphic gets no CanvasRenderer.
+        GameObject fillObject = new GameObject("Fill", typeof(RectTransform), typeof(CanvasRenderer));
+        fillObject.transform.SetParent(canvasObject.transform, false);
+
+        RectTransform fillRect = (RectTransform)fillObject.transform;
+        fillRect.anchorMin = Vector2.zero;
+        fillRect.anchorMax = Vector2.one;
+        fillRect.offsetMin = Vector2.zero;
+        fillRect.offsetMax = Vector2.zero;
+
+        fill = fillObject.AddComponent<Image>();
+        fill.raycastTarget = false;
+    }
+
+    private void LateUpdate()
+    {
+        if (config == null || source == null || head == null || fill == null || canvasRect == null)
+            return;
+
+        float distance = Vector3.Distance(head.transform.position, source.position);
+        bool markerVisible = owner == null || owner.isVisible;
+        float target = markerVisible && distance <= config.TriggerRadiusMeters ? 1f : 0f;
+
+        strength = config.FadeSeconds > 0f
+            ? Mathf.MoveTowards(strength, target, Time.deltaTime / config.FadeSeconds)
+            : target;
+
+        bool showing = strength > 0.001f;
+
+        if (fill.enabled != showing)
+            fill.enabled = showing;
+
+        if (!showing)
+            return;
+
+        FollowHead();
+
+        Color fillColor = GetMarkerColor();
+        fillColor.a = config.FillAlpha * strength;
+        fill.color = fillColor;
+    }
+
+    private Color GetMarkerColor()
+    {
+        if (owner != null &&
+            MarkVisualConfig.TryLoad(out MarkVisualConfig visualConfig) &&
+            visualConfig.TryGetStatusColor(owner.lastRadiationValue, out Color statusColor))
+        {
+            return statusColor;
+        }
+
+        return Color.white;
+    }
+
+    // XREAL's projection is asymmetric, so the visible rect is sampled rather than derived
+    // from fieldOfView. ProximityAlertPresentation sizes its own canvas the same way.
+    private void FollowHead()
+    {
+        float distance = Mathf.Max(0.2f, canvasDistanceMeters);
+        Vector3 bottomLeft = head.ViewportToWorldPoint(new Vector3(0f, 0f, distance));
+        Vector3 topLeft = head.ViewportToWorldPoint(new Vector3(0f, 1f, distance));
+        Vector3 bottomRight = head.ViewportToWorldPoint(new Vector3(1f, 0f, distance));
+        Vector3 center = head.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, distance));
+
+        canvasRect.position = center;
+        canvasRect.rotation = head.transform.rotation;
+        canvasRect.localScale = Vector3.one;
+        canvasRect.sizeDelta = new Vector2(
+            Vector3.Distance(bottomLeft, bottomRight),
+            Vector3.Distance(bottomLeft, topLeft));
+    }
+
+    private void OnDestroy()
+    {
+        if (fillCanvas != null)
+            Destroy(fillCanvas.gameObject);
+    }
+}
