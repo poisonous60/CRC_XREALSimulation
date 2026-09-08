@@ -12,8 +12,11 @@ public class ScreenFillPresentation : SourcePresentation
     [SerializeField] private ScreenFillConfig config;
 
     [Header("Placement")]
-    [Tooltip("Distance from the head at which the fill canvas is parked.")]
-    [SerializeField, Min(0.2f)] private float canvasDistanceMeters = 1.5f;
+    [Tooltip("Distance from the head at which the fill canvas is parked. Keep it under the trigger radius so the fill sits in front of the marker it reports.")]
+    [SerializeField, Min(0.2f)] private float canvasDistanceMeters = 0.5f;
+
+    [Tooltip("Draw order against the other world canvases. ARDetectorHud sits at 100, so anything under that leaves the HUD readable.")]
+    [SerializeField] private int sortingOrder = 50;
 
     private Transform source;
     private Camera head;
@@ -46,15 +49,22 @@ public class ScreenFillPresentation : SourcePresentation
             return;
 
         GameObject canvasObject = new GameObject("ScreenFillCanvas", typeof(Canvas));
+        canvasObject.layer = 5;
         fillCanvas = canvasObject.GetComponent<Canvas>();
         fillCanvas.renderMode = RenderMode.WorldSpace;
         fillCanvas.worldCamera = head;
+
+        // Without an explicit order the fill sorts by depth against the marker's own
+        // transparent circle, which then draws over the very fill it triggered.
+        fillCanvas.overrideSorting = true;
+        fillCanvas.sortingOrder = sortingOrder;
 
         canvasRect = (RectTransform)canvasObject.transform;
         canvasRect.localScale = Vector3.one;
 
         // RequireComponent is editor-only, so a script-built Graphic gets no CanvasRenderer.
         GameObject fillObject = new GameObject("Fill", typeof(RectTransform), typeof(CanvasRenderer));
+        fillObject.layer = 5;
         fillObject.transform.SetParent(canvasObject.transform, false);
 
         RectTransform fillRect = (RectTransform)fillObject.transform;

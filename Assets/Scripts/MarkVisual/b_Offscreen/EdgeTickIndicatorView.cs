@@ -19,6 +19,9 @@ public class EdgeTickIndicatorView : OffscreenIndicatorView
 
     public EdgeTickConfig Config => config;
 
+    // The tick reports a state, not a bearing, so it never slides along its edge.
+    public override bool UsesFixedEdgeCenter => true;
+
     private void Awake()
     {
         tick = GetComponentInChildren<Image>(true);
@@ -57,14 +60,14 @@ public class EdgeTickIndicatorView : OffscreenIndicatorView
         tickRect.localEulerAngles = new Vector3(0f, 0f, GetEdgeRotation(edge));
     }
 
-    // The placer anchors this root after calling Show, so reading the anchor for the
-    // offset has to wait until the frame's placement is already in.
+    // The placer anchors this root after calling Show, so the offset has to wait until
+    // the frame's placement is already in.
     private void LateUpdate()
     {
         if (tickRect == null || config == null)
             return;
 
-        tickRect.anchoredPosition = GetOutwardDirection(currentEdge) * GetOutwardShift(currentEdge);
+        tickRect.anchoredPosition = GetOutwardDirection(currentEdge) * config.EdgeOffset;
     }
 
     // Authored with the long axis on +X and the outward face on +Y, so one rotation
@@ -97,34 +100,5 @@ public class EdgeTickIndicatorView : OffscreenIndicatorView
             default:
                 return Vector2.left;
         }
-    }
-
-    private float GetOutwardShift(OffscreenEdge edge)
-    {
-        RectTransform root = (RectTransform)transform;
-        RectTransform layer = root.parent as RectTransform;
-
-        if (layer == null)
-            return 0f;
-
-        float marginPixels;
-
-        switch (edge)
-        {
-            case OffscreenEdge.Up:
-                marginPixels = (1f - root.anchorMax.y) * layer.rect.height;
-                break;
-            case OffscreenEdge.Down:
-                marginPixels = root.anchorMin.y * layer.rect.height;
-                break;
-            case OffscreenEdge.Right:
-                marginPixels = (1f - root.anchorMax.x) * layer.rect.width;
-                break;
-            default:
-                marginPixels = root.anchorMin.x * layer.rect.width;
-                break;
-        }
-
-        return marginPixels - config.EdgeOffset - config.Thickness * 0.5f;
     }
 }

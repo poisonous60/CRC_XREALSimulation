@@ -14,8 +14,8 @@ public class EdgeTickConfig : ScriptableObject
     [SerializeField, Min(1f)] private float thickness = 14f;
 
     [Header("Placement")]
-    [Tooltip("Distance from the screen edge to the tick's outward end. 0 puts the tick against the edge; negative pushes it off screen.")]
-    [SerializeField] private float edgeOffset = 12f;
+    [Tooltip("Pixels the tick is pushed outward from the margin the HUD anchors it at. 0 leaves it on that margin; XREAL shows less than the canvas is wide, so a positive value can push it off the side.")]
+    [SerializeField] private float edgeOffset;
 
     public float Length => Mathf.Max(1f, length);
     public float Thickness => Mathf.Max(1f, thickness);

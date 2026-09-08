@@ -9,9 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8ac242bea5b3aed4eaee5e6545cc355a, type: 3}
-  m_Name: b_05_edge_tick_config
+  m_Script: {fileID: 11500000, guid: d7fd9488000d3734a9e00ee676215985, type: 3}
+  m_Name: DefaultVolumeProfile
   m_EditorClassIdentifier: 
-  length: 96
-  thickness: 14
-  edgeOffset: 0
+  components: []

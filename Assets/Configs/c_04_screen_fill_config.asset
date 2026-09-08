@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: c_04_screen_fill_config
   m_EditorClassIdentifier: 
   triggerRadiusMeters: 0.75
-  fillAlpha: 0.25
+  fillAlpha: 0.45
   fadeSeconds: 0

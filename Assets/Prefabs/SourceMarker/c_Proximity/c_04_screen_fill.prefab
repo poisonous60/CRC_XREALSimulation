@@ -45,4 +45,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: ae98b2509749e5f409cc63bde6eea1dc, type: 2}
-  canvasDistanceMeters: 1.5
+  canvasDistanceMeters: 0.5
+  sortingOrder: 50

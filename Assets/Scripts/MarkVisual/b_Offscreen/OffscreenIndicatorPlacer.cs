@@ -163,33 +163,28 @@ public class OffscreenIndicatorPlacer
             return;
         }
 
-        float stackOffset = AlternatingStackOffset(stackIndex, 0.055f);
+        bool fixedCenter = indicator.UsesFixedEdgeCenter;
+        float stackOffset = fixedCenter ? 0f : AlternatingStackOffset(stackIndex, 0.055f);
+        float alongHorizontal = fixedCenter ? 0.5f : AlongEdge(state.viewport.z > 0f ? state.viewport.x : 0.5f, stackOffset);
+        float alongVertical = fixedCenter ? 0.5f : AlongEdge(state.viewport.z > 0f ? state.viewport.y : 0.5f, stackOffset);
         Vector2 anchor;
 
         switch (state.direction)
         {
             case OffscreenEdge.Left:
-                anchor = new Vector2(
-                    screenEdgeMargin,
-                    Mathf.Clamp(state.viewport.z > 0f ? state.viewport.y + stackOffset : 0.5f + stackOffset, 0.15f, 0.85f));
+                anchor = new Vector2(screenEdgeMargin, alongVertical);
                 break;
 
             case OffscreenEdge.Right:
-                anchor = new Vector2(
-                    1f - screenEdgeMargin,
-                    Mathf.Clamp(state.viewport.z > 0f ? state.viewport.y + stackOffset : 0.5f + stackOffset, 0.15f, 0.85f));
+                anchor = new Vector2(1f - screenEdgeMargin, alongVertical);
                 break;
 
             case OffscreenEdge.Up:
-                anchor = new Vector2(
-                    Mathf.Clamp(state.viewport.z > 0f ? state.viewport.x + stackOffset : 0.5f + stackOffset, 0.15f, 0.85f),
-                    1f - screenEdgeMargin);
+                anchor = new Vector2(alongHorizontal, 1f - screenEdgeMargin);
                 break;
 
             default:
-                anchor = new Vector2(
-                    Mathf.Clamp(state.viewport.z > 0f ? state.viewport.x + stackOffset : 0.5f + stackOffset, 0.15f, 0.85f),
-                    screenEdgeMargin);
+                anchor = new Vector2(alongHorizontal, screenEdgeMargin);
                 break;
         }
 
@@ -247,6 +242,11 @@ public class OffscreenIndicatorPlacer
         return new Vector2(
             Mathf.Max(0.01f, 0.5f - screenEdgeMargin - halfSize.x),
             Mathf.Max(0.01f, 0.5f - screenEdgeMargin - halfSize.y));
+    }
+
+    private static float AlongEdge(float viewportCoordinate, float stackOffset)
+    {
+        return Mathf.Clamp(viewportCoordinate + stackOffset, 0.15f, 0.85f);
     }
 
     private static Vector2 RotateDegrees(Vector2 direction, float degrees)
