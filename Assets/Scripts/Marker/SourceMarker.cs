@@ -29,6 +29,7 @@ public class SourceMarker : MonoBehaviour
     public bool visibilityRequested;
     public bool isVisible;
     public bool centerVisualRequested;
+    public GameObject placementVisual;
     public bool isControllerHovered;
     public bool isControllerMoving;
     public List<FalloffShellInfo> falloffShells;

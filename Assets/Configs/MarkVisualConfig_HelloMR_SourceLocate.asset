@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   markerPrefab: {fileID: 6387016307566893731, guid: f6d69e8b4d22668459be4f0909556c34, type: 3}
   markerSizeMeters: 0.03
+  placementPrefab: {fileID: 0}
+  placementSizeMeters: 0.03
   statusBands:
   - maxCps: 1000
     color: {r: 0.84, g: 0.16, b: 0.16, a: 1}

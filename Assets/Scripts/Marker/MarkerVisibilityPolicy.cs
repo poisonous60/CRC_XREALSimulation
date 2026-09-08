@@ -56,6 +56,13 @@ public class MarkerVisibilityPolicy
         bool centerVisible = marker.centerVisualRequested ||
                              (showGrayPreviewSphere && isPreview);
 
+        // The placement look replaces the marker's own body while it is up, so the
+        // two are never drawn on top of each other.
+        bool usePlacementVisual = marker.placementVisual != null;
+
+        if (usePlacementVisual)
+            marker.placementVisual.SetActive(visible);
+
         // The object stays active while hidden so its own components keep running.
         if (marker.bodyRenderers != null && marker.bodyRenderers.Length > 0)
         {
@@ -72,14 +79,15 @@ public class MarkerVisibilityPolicy
                     marker.bodyRendererDefaults[i];
 
                 bool isCenter = bodyRenderer == marker.renderer;
-                bodyRenderer.enabled = isCenter
-                    ? visible && centerVisible
-                    : visible && wasEnabledAtCreation;
+                bodyRenderer.enabled = !usePlacementVisual &&
+                    (isCenter
+                        ? visible && centerVisible
+                        : visible && wasEnabledAtCreation);
             }
         }
         else if (marker.renderer != null)
         {
-            marker.renderer.enabled = visible && centerVisible;
+            marker.renderer.enabled = !usePlacementVisual && visible && centerVisible;
         }
 
         if (marker.falloffShells != null)

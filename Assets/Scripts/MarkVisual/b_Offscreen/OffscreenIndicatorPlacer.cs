@@ -223,7 +223,7 @@ public class OffscreenIndicatorPlacer
         rect.anchorMax = anchor;
         rect.anchoredPosition = Vector2.zero;
 
-        float aspect = targetCamera != null && targetCamera.aspect > 0f ? targetCamera.aspect : 1f;
+        float aspect = HeadViewport.Aspect(targetCamera);
         Vector2 screenDirection = new Vector2(fromCenter.x * aspect, fromCenter.y);
         indicator.SetDirection(Mathf.Atan2(screenDirection.y, screenDirection.x) * Mathf.Rad2Deg);
     }

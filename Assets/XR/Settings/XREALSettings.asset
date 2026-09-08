@@ -16,7 +16,7 @@ MonoBehaviour:
   InitialTrackingType: 0
   InitialInputSource: 1
   VirtualController: {fileID: 1406232319260624, guid: b8ae810d2c7c5df4fa28456c7f7770dd, type: 3}
-  SupportMultiResume: 0
+  SupportMultiResume: 1
   AddtionalPermissions:
   - VIBRATION
   - RECORD_AUDIO

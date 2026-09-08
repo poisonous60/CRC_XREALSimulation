@@ -32,6 +32,12 @@ public class MarkVisualConfig : ScriptableObject
     [Tooltip("Marker size in meters. Radiation changes color only, never size.")]
     [SerializeField, Min(MinimumMarkerSizeMeters)] private float markerSizeMeters = 0.2f;
 
+    [Tooltip("Look drawn instead of Marker Prefab while Add Source / Place is in progress. It keeps its own materials, so the CPS colors and the manager's Placement Preview Visual tint do not reach it. Empty keeps the tinted Marker Prefab.")]
+    [SerializeField] private GameObject placementPrefab;
+
+    [Tooltip("Placement Prefab size in meters. Independent of Marker Size Meters, so the aiming look can be larger or smaller than the placed marker.")]
+    [SerializeField, Min(MinimumMarkerSizeMeters)] private float placementSizeMeters = 0.2f;
+
     [Header("Status Color by CPS")]
     [Tooltip("Bands from low to high CPS. Press + to add one. A reading past the last band keeps that band's color.")]
     [SerializeField] private List<StatusColorBand> statusBands = new List<StatusColorBand>();
@@ -89,6 +95,8 @@ public class MarkVisualConfig : ScriptableObject
     [SerializeField] private bool showLabel = false;
 
     public GameObject MarkerPrefab => markerPrefab;
+    public GameObject PlacementPrefab => placementPrefab;
+    public float PlacementSizeMeters => Mathf.Max(MinimumMarkerSizeMeters, placementSizeMeters);
     public float MarkerSizeMeters => Mathf.Max(MinimumMarkerSizeMeters, markerSizeMeters);
     public Color UnknownColor => unknownColor;
     public bool HideLowCps => hideLowCps;
@@ -198,5 +206,6 @@ public class MarkVisualConfig : ScriptableObject
     private void OnValidate()
     {
         markerSizeMeters = Mathf.Max(MinimumMarkerSizeMeters, markerSizeMeters);
+        placementSizeMeters = Mathf.Max(MinimumMarkerSizeMeters, placementSizeMeters);
     }
 }

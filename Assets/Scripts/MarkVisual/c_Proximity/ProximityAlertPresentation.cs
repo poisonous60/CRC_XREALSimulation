@@ -113,22 +113,16 @@ public class ProximityAlertPresentation : SourcePresentation
         return 1f + pulseAmplitude * strength * phase;
     }
 
-    // XREAL's projection is asymmetric, so the visible rect is sampled rather than derived
-    // from fieldOfView. ARDetectorHud.Canvas.cs sizes its own canvas the same way.
     private void FollowHead()
     {
         float distance = Mathf.Max(0.2f, canvasDistanceMeters);
-        Vector3 bottomLeft = head.ViewportToWorldPoint(new Vector3(0f, 0f, distance));
-        Vector3 topLeft = head.ViewportToWorldPoint(new Vector3(0f, 1f, distance));
-        Vector3 bottomRight = head.ViewportToWorldPoint(new Vector3(1f, 0f, distance));
         Vector3 center = head.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, distance));
+        float visibleHeight = HeadViewport.VisibleHeight(head, distance);
 
         canvasRect.position = center;
         canvasRect.rotation = head.transform.rotation;
         canvasRect.localScale = Vector3.one;
-        canvasRect.sizeDelta = new Vector2(
-            Vector3.Distance(bottomLeft, bottomRight),
-            Vector3.Distance(bottomLeft, topLeft));
+        canvasRect.sizeDelta = new Vector2(visibleHeight * HeadViewport.Aspect(head), visibleHeight);
     }
 
     private void OnDestroy()

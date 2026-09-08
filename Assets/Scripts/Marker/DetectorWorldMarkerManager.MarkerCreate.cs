@@ -196,6 +196,8 @@ public partial class DetectorWorldMarkerManager
 
         marker.lastRadiationValue = radiationValue;
 
+        SyncPlacementVisual(marker, IsPreviewMarker(marker));
+
         if (marker.visual != null)
         {
             marker.visual.SetSettings(VisualSettings);
@@ -214,6 +216,45 @@ public partial class DetectorWorldMarkerManager
             SetMarkerRequestedVisibility(marker, false);
         else
             ForceMarkerVisible(marker);
+    }
+
+    private void SyncPlacementVisual(SourceMarker marker, bool isPreview)
+    {
+        GameObject prefab = null;
+        float sizeMeters = fixedMarkerSize;
+
+        if (isPreview && MarkVisualConfig.TryLoad(out MarkVisualConfig visualSetting))
+        {
+            prefab = visualSetting.PlacementPrefab;
+            sizeMeters = visualSetting.PlacementSizeMeters;
+        }
+
+        if (prefab == null)
+        {
+            if (marker.placementVisual != null)
+            {
+                Destroy(marker.placementVisual);
+                marker.placementVisual = null;
+            }
+
+            return;
+        }
+
+        if (marker.placementVisual == null)
+        {
+            marker.placementVisual = Instantiate(prefab, marker.root.transform);
+            marker.placementVisual.name = $"PlacementVisual_{marker.detectorId}";
+            marker.placementVisual.transform.localPosition = Vector3.zero;
+            marker.placementVisual.transform.localRotation = Quaternion.identity;
+        }
+
+        // The root carries Marker Size Meters, so divide it out to reach the
+        // placement size in meters rather than a multiple of the marker size.
+        float localScale = Mathf.Abs(fixedMarkerSize) > 0.0001f
+            ? sizeMeters / fixedMarkerSize
+            : sizeMeters;
+
+        marker.placementVisual.transform.localScale = Vector3.one * localScale;
     }
 
     private void UpdateLabel(SourceMarker marker, float radiationValue, bool moved)
