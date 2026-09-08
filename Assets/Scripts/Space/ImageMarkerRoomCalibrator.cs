@@ -5,7 +5,8 @@ using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 
 /// <summary>
-/// Places the room origin on the tracked ROOM_ORIGIN image, on a wall or lying flat, at its first sighting.
+/// Places the room origin on the tracked ROOM_ORIGIN image, on a wall or lying flat,
+/// and re-aligns it, with every placed source, on each later sighting.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
@@ -26,10 +27,22 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
     [Tooltip("Reference image name in the library. Also used as the room id, so records saved by the wall-QR flow stay compatible.")]
     [SerializeField] private string markerName = "ROOM_ORIGIN";
 
+    [Header("Re-alignment")]
+    [Tooltip("Minimum seconds between two re-alignments of an already placed room origin. 0 re-aligns on every sighting.")]
+    [SerializeField, Min(0f)] private float realignIntervalSeconds = 0.5f;
+
+    [Tooltip("Re-align only once the marker has moved this far from the committed frame. Absorbs tracker jitter.")]
+    [SerializeField, Min(0f)] private float realignPositionThresholdMeters = 0.01f;
+
+    [Tooltip("Re-align only once the marker has turned this much from the committed frame. Absorbs tracker jitter.")]
+    [SerializeField, Min(0f)] private float realignRotationThresholdDegrees = 1f;
+
     private Camera glassesCamera;
     private bool subscribed;
     private bool guideShown;
     private bool cameraWarned;
+    private Pose committedPose = Pose.identity;
+    private float nextRealignTime;
 
     private void OnEnable()
     {
@@ -81,7 +94,7 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
 
     private void HandleTrackablesChanged(ARTrackablesChangedEventArgs<ARTrackedImage> args)
     {
-        if (!TryResolveRoomCoordinateSystem() || roomCoordinateSystem.IsCalibrated)
+        if (!TryResolveRoomCoordinateSystem())
             return;
 
         if (!TryFindMarker(args.added, out ARTrackedImage image) &&
@@ -93,7 +106,31 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
         if (!TryBuildRoomPose(image, out Pose worldPose))
             return;
 
-        roomCoordinateSystem.TryCalibrateFromPose(markerName, worldPose, out _);
+        if (!roomCoordinateSystem.IsCalibrated)
+        {
+            if (roomCoordinateSystem.TryCalibrateFromPose(markerName, worldPose, out _))
+                CommitPose(worldPose);
+
+            return;
+        }
+
+        if (Time.time < nextRealignTime)
+            return;
+
+        if (Vector3.Distance(worldPose.position, committedPose.position) < realignPositionThresholdMeters &&
+            Quaternion.Angle(worldPose.rotation, committedPose.rotation) < realignRotationThresholdDegrees)
+        {
+            return;
+        }
+
+        if (roomCoordinateSystem.TryRealignCalibratedFrame(worldPose))
+            CommitPose(worldPose);
+    }
+
+    private void CommitPose(Pose worldPose)
+    {
+        committedPose = worldPose;
+        nextRealignTime = Time.time + realignIntervalSeconds;
     }
 
     private bool TryResolveRoomCoordinateSystem()

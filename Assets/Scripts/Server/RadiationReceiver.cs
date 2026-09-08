@@ -98,6 +98,7 @@ public class RadiationReceiver : MonoBehaviour
 
     public string CurrentStatusMessage => currentStatusMessage;
     public Color CurrentStatusColor => currentStatusColor;
+    public string LatestServerTime { get; private set; } = "";
     public string CurrentServerIp => string.IsNullOrWhiteSpace(savedIp) ? defaultIp : savedIp;
     public bool HasSavedServerIp => hasSavedServerIp;
     public bool IsConnected => isServerConnected;
@@ -398,9 +399,12 @@ public class RadiationReceiver : MonoBehaviour
 
             try
             {
-                var root = JObject.Parse(json);
-                var dict = root["deviceDataDictionary"]?.ToObject<Dictionary<string, float>>();
+                JObject root = JObject.Parse(json);
+                Dictionary<string, float> dict =
+                    root["deviceDataDictionary"]?.ToObject<Dictionary<string, float>>();
                 if (dict == null) return;
+
+                string serverTime = (string)root["time"] ?? "";
 
                 Dictionary<string, float> normalizedData = CreateNormalizedDeviceData(dict);
 
@@ -412,6 +416,7 @@ public class RadiationReceiver : MonoBehaviour
                         !IsConnected)
                         return;
 
+                    LatestServerTime = serverTime;
                     ReplaceLatestDeviceData(normalizedData);
                     UpdateDisplay(result);
                     OnRadiationDataReceived?.Invoke(

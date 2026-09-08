@@ -108,7 +108,44 @@ public partial class BeamProControllerBridge
             transientActionColor != Color.green &&
             transientActionColor != Color.white;
 
-        if (hasBlockingActionStatus)
+        if (ControllerButtonOverride.HidePlacementButtons)
+        {
+            if (!serverAvailable)
+            {
+                requiredAction = "SERVER SETUP REQUIRED";
+                requiredInstruction = "Restart the app or check the RadiationReceiver setup.";
+                guideColor = new Color(1f, 0.55f, 0.50f, 1f);
+            }
+            else if (connecting)
+            {
+                requiredAction = "WAIT FOR SERVER CONNECTION";
+                requiredInstruction =
+                    $"Connecting to {SafeUiValue(radiationReceiver.CurrentServerIp, "server")}.";
+                guideColor = new Color(1f, 0.86f, 0.38f, 1f);
+            }
+            else if (!connected)
+            {
+                requiredAction = "CONNECT SERVER";
+                requiredInstruction = "Check Server IP, then tap CONNECT.";
+                guideColor = latestServerStatusColor.a > 0.01f
+                    ? latestServerStatusColor
+                    : new Color(1f, 0.55f, 0.50f, 1f);
+            }
+            else if (!roomCalibrated)
+            {
+                requiredAction = "LOOK AT THE ROOM MARKER";
+                requiredInstruction = "The printed marker sets the room origin.";
+            }
+            else if (!freshData)
+            {
+                requiredAction = receivedRadiationThisConnection
+                    ? "RESTORE THE CPS STREAM"
+                    : "START THE CPS STREAM";
+                requiredInstruction = "No fresh CPS is arriving from the server.";
+                guideColor = new Color(1f, 0.78f, 0.34f, 1f);
+            }
+        }
+        else if (hasBlockingActionStatus)
         {
             requiredAction = "ACTION REQUIRED";
             requiredInstruction = CompactUiMessage(transientActionMessage, 88);

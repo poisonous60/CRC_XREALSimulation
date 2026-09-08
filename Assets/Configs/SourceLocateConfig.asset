@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee10aeb28cacd6a4ea02511f9eb2f21f, type: 3}
+  m_Name: SourceLocateConfig
+  m_EditorClassIdentifier: 
+  layoutJson: {fileID: 4900000, guid: 79cb76f5e78cc7142a726a71a949d094, type: 3}
+  squareOriginFromMarkerMeters: {x: 0.10994, y: -0.13304}
+  detectorHeightMeters: 0.02
+  discHeightMeters: 0.002
+  sourceHeightMeters: 0.045
+  discColor: {r: 0.84, g: 0.16, b: 0.16, a: 0.18}
+  minimumDiscRadiusMeters: 0.005
+  labelHeightMeters: 0.012
+  labelColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
+  positionLerpSeconds: 0

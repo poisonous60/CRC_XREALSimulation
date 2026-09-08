@@ -25,6 +25,7 @@ public class MarkVisualConfig : ScriptableObject
     private const float MinimumMarkerSizeMeters = 0.001f;
 
     private static MarkVisualConfig loaded;
+    private static MarkVisualConfig sceneOverride;
 
     [Header("(a) Marker")]
     [Tooltip("Replaces the whole marker object. Empty keeps the built-in sphere and its transparent shader.")]
@@ -63,6 +64,13 @@ public class MarkVisualConfig : ScriptableObject
     [Tooltip("Every look shown as the user approaches. All entries are spawned together. Empty draws nothing.")]
     [SerializeField] private List<SourcePresentation> proximityPrefabs = new List<SourcePresentation>();
 
+    [Header("(d) Uncertainty Footprint")]
+    [Tooltip("Every look shown for the estimator's uncertainty radius. All entries are spawned together. Empty draws nothing.")]
+    [SerializeField] private List<UncertaintyPresentation> uncertaintyPrefabs = new List<UncertaintyPresentation>();
+
+    [Tooltip("Footprint color. Alpha decides how much of the surface stays readable through it.")]
+    [SerializeField] private Color uncertaintyColor = new Color(0.84f, 0.16f, 0.16f, 0.18f);
+
     [Header("Code-drawn Extras")]
     [Tooltip("Faint inverse-square shells around the marker. Drawn in code, so no prefab changes their look.")]
     [SerializeField] private bool showFalloffShells = true;
@@ -92,6 +100,8 @@ public class MarkVisualConfig : ScriptableObject
     public bool OffscreenUseStatusColor => offscreenUseStatusColor;
     public Color OffscreenColor => offscreenColor;
     public IReadOnlyList<SourcePresentation> ProximityPrefabs => proximityPrefabs;
+    public IReadOnlyList<UncertaintyPresentation> UncertaintyPrefabs => uncertaintyPrefabs;
+    public Color UncertaintyColor => uncertaintyColor;
 
     public bool HasProximityPrefab()
     {
@@ -118,10 +128,30 @@ public class MarkVisualConfig : ScriptableObject
     private static void ResetCache()
     {
         loaded = null;
+        sceneOverride = null;
+    }
+
+    public static void SetSceneOverride(MarkVisualConfig config)
+    {
+        sceneOverride = config;
+    }
+
+    public static void ClearSceneOverride(MarkVisualConfig config)
+    {
+        // A non-additive scene load destroys the old scene before the new scene's Awake,
+        // but guarding by identity keeps a stale OnDestroy from dropping a newer override.
+        if (sceneOverride == config)
+            sceneOverride = null;
     }
 
     public static bool TryLoad(out MarkVisualConfig config)
     {
+        if (sceneOverride != null)
+        {
+            config = sceneOverride;
+            return true;
+        }
+
         if (loaded == null)
             loaded = Resources.Load<MarkVisualConfig>(ResourceName);
 

@@ -53,6 +53,27 @@ public partial class BeamProControllerBridge
 
         if (controllerCancelButtonText == null && controllerCancelButton != null)
             controllerCancelButtonText = controllerCancelButton.GetComponentInChildren<TMP_Text>(true);
+
+        ApplyPlacementButtonVisibility();
+    }
+
+    // The controller prefab outlives a scene under SupportMultiResume, so both the hiding
+    // and the restoring branch run on every resolve instead of once at startup.
+    private void ApplyPlacementButtonVisibility()
+    {
+        bool visible = !ControllerButtonOverride.HidePlacementButtons;
+
+        SetButtonVisible(controllerQrScanButton, visible);
+        SetButtonVisible(controllerPlaceButton, visible);
+        SetButtonVisible(controllerCancelButton, visible);
+    }
+
+    private static void SetButtonVisible(Button button, bool visible)
+    {
+        if (button == null || button.gameObject.activeSelf == visible)
+            return;
+
+        button.gameObject.SetActive(visible);
     }
 
     private static Button FindButtonByName(Transform root, string buttonName)

@@ -47,3 +47,5 @@ UnityDebugUpload/
 # Claude Code
 .claude/
 plans/
+CLAUDE.md
+CONTEXT.md

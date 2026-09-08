@@ -675,6 +675,82 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 211346756}
   m_CullTransparentMesh: 1
+--- !u!1 &292079803
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 292079807}
+  - component: {fileID: 292079806}
+  - component: {fileID: 292079805}
+  - component: {fileID: 292079804}
+  m_Layer: 0
+  m_Name: SourceLocate
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &292079804
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 292079803}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32e77331cf76f90408137be262de0716, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hidePlacementButtons: 1
+--- !u!114 &292079805
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 292079803}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed8e5e954343cde43bae18d5bb02e635, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: 7d17de5ac59f714458c158c822bf08b6, type: 2}
+--- !u!114 &292079806
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 292079803}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2e7a1237d209ac40b95476fee286755, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: 4da147f9981a931428e2d4d692980c64, type: 2}
+  roomCoordinateSystem: {fileID: 0}
+  markerManager: {fileID: 0}
+  radiationReceiver: {fileID: 0}
+--- !u!4 &292079807
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 292079803}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &298894143
 GameObject:
   m_ObjectHideFlags: 0
@@ -808,15 +884,15 @@ MonoBehaviour:
   fallbackCamera: {fileID: 609993946}
   markerPrefab: {fileID: 0}
   sourceMarkerKey: SOURCE
-  usePlaneIntersectionPlacement: 1
+  usePlaneIntersectionPlacement: 0
   planeManager: {fileID: 624047417}
   planeDetectionMode: 3
   minPlaneHitDistanceMeters: 0.15
   maxPlaneHitDistanceMeters: 10
   hidePreviewWithoutPlaneHit: 1
   waitingForPlaneStateLabel: aim at a detected plane
-  useCoordinateDatabase: 1
-  coordinateDatabase: {fileID: 906282734}
+  useCoordinateDatabase: 0
+  coordinateDatabase: {fileID: 0}
   loadSavedCoordinatesOnStart: 0
   enableRoomCoordinateSystem: 1
   roomCoordinateSystem: {fileID: 0}
@@ -867,7 +943,7 @@ MonoBehaviour:
   hiddenMaxCps: 2
   greenMaxCps: 10
   dangerThresholdCps: 350
-  enableControllerDetectorReposition: 1
+  enableControllerDetectorReposition: 0
   detectorControllerInteractor: {fileID: 0}
   controllerSelectionMaxDistanceMeters: 10
   controllerSelectionAngleDegrees: 1.5
@@ -928,7 +1004,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   anchorManager: {fileID: 624047415}
-  coordinateDatabase: {fileID: 906282734}
+  coordinateDatabase: {fileID: 0}
   saveDelaySeconds: 0.5
   saveAttemptCount: 3
   saveRetryDelaySeconds: 2
@@ -952,6 +1028,9 @@ MonoBehaviour:
   trackedImageManager: {fileID: 0}
   roomCoordinateSystem: {fileID: 0}
   markerName: ROOM_ORIGIN
+  realignIntervalSeconds: 0.5
+  realignPositionThresholdMeters: 0.01
+  realignRotationThresholdDegrees: 1
 --- !u!20 &609993946 stripped
 Camera:
   m_CorrespondingSourceObject: {fileID: 9011500862288746601, guid: 3182b5074a6bf3d4887a44a38cbb9cb6, type: 3}
@@ -1296,56 +1375,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 9011500862288746604, guid: 3182b5074a6bf3d4887a44a38cbb9cb6, type: 3}
   m_PrefabInstance: {fileID: 694392833}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &906282733
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 906282735}
-  - component: {fileID: 906282734}
-  m_Layer: 0
-  m_Name: DetectorCoordinateDatabase
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &906282734
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 906282733}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: be293f2adf7f2b640b12e69071656f3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  saveFileName: detector_coordinates.json
-  savePrettyJson: 1
-  logSavePathOnStart: 1
-  autoSaveAfterEachChange: 1
-  radiationSaveMinimumIntervalSeconds: 1
-  saveFailureRetryDelaySeconds: 2
---- !u!4 &906282735
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 906282733}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.008177512, y: 1.1201034, z: 1.5521616}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1011247521
 GameObject:
   m_ObjectHideFlags: 0
@@ -2344,7 +2373,7 @@ SceneRoots:
   - {fileID: 697720431}
   - {fileID: 732363536}
   - {fileID: 588933900}
-  - {fileID: 906282735}
   - {fileID: 2005687755}
   - {fileID: 1423238746}
   - {fileID: 145385456}
+  - {fileID: 292079807}

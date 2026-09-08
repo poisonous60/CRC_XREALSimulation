@@ -251,6 +251,29 @@ public sealed class RoomCoordinateSystem : MonoBehaviour
         return true;
     }
 
+    // Unlike a first calibration this writes no PlayerPrefs and publishes no status,
+    // so it can run on every ROOM_ORIGIN sighting while tracking.
+    public bool TryRealignCalibratedFrame(Pose worldPose)
+    {
+        if (!IsCalibrated || coordinateFrame == null)
+            return false;
+
+        // Moving the frame under a live preview or drag would cancel that interaction.
+        if (markerManager != null &&
+            (markerManager.HasActivePlacement || markerManager.HasActiveDetectorMove))
+        {
+            return false;
+        }
+
+        coordinateFrame.SetPositionAndRotation(worldPose.position, worldPose.rotation);
+        markerManager?.RestoreMissingMarkersFromRoomCoordinates(this);
+
+        RoomCalibrated?.Invoke(
+            RoomId,
+            new Pose(coordinateFrame.position, coordinateFrame.rotation));
+        return true;
+    }
+
     public bool TryCancelPendingPlacement(out string message)
     {
         if (!HasPendingPlacement)
