@@ -196,6 +196,8 @@ MonoBehaviour:
       m_Calls: []
   baseWidth: 80
   length: 38
+  backArcDegrees: 0
+  backArcSegments: 12
 --- !u!222 &7195995162614731408
 CanvasRenderer:
   m_ObjectHideFlags: 0
