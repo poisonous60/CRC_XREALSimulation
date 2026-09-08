@@ -36,23 +36,11 @@ public partial class BeamProControllerBridge
         if (searchRoot == null)
             return;
 
-        if (controllerQrScanButton == null)
-            controllerQrScanButton = FindButtonByName(searchRoot, "QRScanButton");
+        if (controllerSourceActionButton == null)
+            controllerSourceActionButton = FindButtonByName(searchRoot, "SourceActionButton");
 
-        if (controllerPlaceButton == null)
-            controllerPlaceButton = FindButtonByName(searchRoot, "PlaceDetectorButton");
-
-        if (controllerCancelButton == null)
-            controllerCancelButton = FindButtonByName(searchRoot, "CancelPlaceButton");
-
-        if (controllerQrScanButtonText == null && controllerQrScanButton != null)
-            controllerQrScanButtonText = controllerQrScanButton.GetComponentInChildren<TMP_Text>(true);
-
-        if (controllerPlaceButtonText == null && controllerPlaceButton != null)
-            controllerPlaceButtonText = controllerPlaceButton.GetComponentInChildren<TMP_Text>(true);
-
-        if (controllerCancelButtonText == null && controllerCancelButton != null)
-            controllerCancelButtonText = controllerCancelButton.GetComponentInChildren<TMP_Text>(true);
+        if (controllerSourceActionButtonText == null && controllerSourceActionButton != null)
+            controllerSourceActionButtonText = controllerSourceActionButton.GetComponentInChildren<TMP_Text>(true);
 
         ApplyPlacementButtonVisibility();
     }
@@ -63,9 +51,7 @@ public partial class BeamProControllerBridge
     {
         bool visible = !ControllerButtonOverride.HidePlacementButtons;
 
-        SetButtonVisible(controllerQrScanButton, visible);
-        SetButtonVisible(controllerPlaceButton, visible);
-        SetButtonVisible(controllerCancelButton, visible);
+        SetButtonVisible(controllerSourceActionButton, visible);
     }
 
     private static void SetButtonVisible(Button button, bool visible)

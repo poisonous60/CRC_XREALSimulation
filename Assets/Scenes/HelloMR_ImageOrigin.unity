@@ -869,7 +869,7 @@ MonoBehaviour:
   hiddenMaxCps: 2
   greenMaxCps: 10
   dangerThresholdCps: 350
-  enableControllerDetectorReposition: 1
+  enableControllerDetectorReposition: 0
   detectorControllerInteractor: {fileID: 0}
   controllerSelectionMaxDistanceMeters: 10
   controllerSelectionAngleDegrees: 1.5

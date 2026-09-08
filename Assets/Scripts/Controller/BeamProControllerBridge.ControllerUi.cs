@@ -112,9 +112,7 @@ public partial class BeamProControllerBridge
 
     private void ConfigureWorkflowButtonLabels()
     {
-        ConfigureWorkflowButtonText(controllerQrScanButtonText);
-        ConfigureWorkflowButtonText(controllerPlaceButtonText);
-        ConfigureWorkflowButtonText(controllerCancelButtonText);
+        ConfigureWorkflowButtonText(controllerSourceActionButtonText);
 
         if (controllerIpInputField == null)
             return;

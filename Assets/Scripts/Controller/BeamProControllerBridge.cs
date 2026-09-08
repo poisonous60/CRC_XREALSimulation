@@ -11,6 +11,7 @@ using UnityEngine.UI;
 ///
 /// Button OnClick examples:
 /// - BeamProControllerBridge.ConnectToServer()
+/// - BeamProControllerBridge.AddOrPlaceSource()
 /// - BeamProControllerBridge.StartQrScan()
 /// - BeamProControllerBridge.StopQrScan()
 /// - BeamProControllerBridge.PlaceDetector()
@@ -45,18 +46,10 @@ public partial class BeamProControllerBridge : MonoBehaviour
     [SerializeField] private TMP_Text controllerRecordButtonText;
 
     [Header("Workflow Controls")]
-    [Tooltip("Optional. Auto-found by the QRScanButton name when empty.")]
-    [SerializeField] private Button controllerQrScanButton;
+    [Tooltip("Optional. Auto-found by the SourceActionButton name when empty.")]
+    [SerializeField] private Button controllerSourceActionButton;
 
-    [Tooltip("Optional. Auto-found by the PlaceDetectorButton name when empty.")]
-    [SerializeField] private Button controllerPlaceButton;
-
-    [Tooltip("Optional. Auto-found by the CancelPlaceButton name when empty.")]
-    [SerializeField] private Button controllerCancelButton;
-
-    [SerializeField] private TMP_Text controllerQrScanButtonText;
-    [SerializeField] private TMP_Text controllerPlaceButtonText;
-    [SerializeField] private TMP_Text controllerCancelButtonText;
+    [SerializeField] private TMP_Text controllerSourceActionButtonText;
 
     [Header("Detector List Layout")]
     [SerializeField, Min(6f)] private float detectorListMinFontSize = 10f;

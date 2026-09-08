@@ -41,20 +41,10 @@ public partial class BeamProControllerBridge
             controllerStatusText.color = presentation.guideColor;
 
         ApplyWorkflowButton(
-            controllerQrScanButton,
-            controllerQrScanButtonText,
-            presentation.scanLabel,
-            presentation.scanEnabled);
-        ApplyWorkflowButton(
-            controllerPlaceButton,
-            controllerPlaceButtonText,
-            presentation.placeLabel,
-            presentation.placeEnabled);
-        ApplyWorkflowButton(
-            controllerCancelButton,
-            controllerCancelButtonText,
-            presentation.cancelLabel,
-            presentation.cancelEnabled);
+            controllerSourceActionButton,
+            controllerSourceActionButtonText,
+            presentation.actionLabel,
+            presentation.actionEnabled);
 
         workflowUiDirty = false;
     }
@@ -269,23 +259,23 @@ public partial class BeamProControllerBridge
         {
             guideText = guideText,
             guideColor = guideColor,
-            scanLabel = scanActive
+            actionLabel = scanActive
                 ? "Scanning..."
-                : roomCalibrated
-                    ? "Add Source"
-                    : !connected
-                        ? "Connect & Scan"
-                        : "Scan Room QR",
-            placeLabel = roomPending ? "Place Room" : "Place Source",
-            cancelLabel = scanActive ? "Cancel Scan" : "Cancel Place",
-            scanEnabled =
-                radiationReceiver != null && markerManager != null &&
-                (roomCalibrated || (qrScanner != null && !captureBusy)) &&
-                !scanActive && !roomPending && !detectorPending,
-            placeEnabled =
-                (roomPending && roomPoseValid) ||
-                (detectorPending && detectorPoseValid),
-            cancelEnabled = scanActive || roomPending || detectorPending
+                : roomPending
+                    ? "Place Room"
+                    : detectorPending
+                        ? "Place Source"
+                        : roomCalibrated
+                            ? "Add Source"
+                            : !connected
+                                ? "Connect & Scan"
+                                : "Scan Room QR",
+            // Left interactable on an invalid pose: the only button greying out mid-placement
+            // reads as a frozen app, and PlaceDetector answers a premature tap with a warning.
+            actionEnabled = roomPending || detectorPending ||
+                (radiationReceiver != null && markerManager != null &&
+                 (roomCalibrated || (qrScanner != null && !captureBusy)) &&
+                 !scanActive)
         };
     }
 
@@ -330,12 +320,8 @@ public partial class BeamProControllerBridge
     {
         public string guideText;
         public Color guideColor;
-        public string scanLabel;
-        public string placeLabel;
-        public string cancelLabel;
-        public bool scanEnabled;
-        public bool placeEnabled;
-        public bool cancelEnabled;
+        public string actionLabel;
+        public bool actionEnabled;
     }
 
     private void ShowControllerActionStatus(string message, Color color)

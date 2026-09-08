@@ -12,18 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ac242bea5b3aed4eaee5e6545cc355a, type: 3}
   m_Name: b_05_edge_tick_config
   m_EditorClassIdentifier: 
-  length: 96
+  length: 600
   thickness: 14
   edgeOffset: 0
-  fadeSeconds: 0.5
+  fadeSeconds: 0.2
   fadeCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 1
-      outSlope: 1
+      inSlope: 0
+      outSlope: 0
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
@@ -31,8 +31,8 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 1
       value: 1
-      inSlope: 1
-      outSlope: 1
+      inSlope: 0
+      outSlope: 0
       tangentMode: 0
       weightedMode: 0
       inWeight: 0

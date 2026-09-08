@@ -7,6 +7,34 @@ using UnityEngine.UI;
 public partial class BeamProControllerBridge
 {
 
+    public bool HasPendingPlacement =>
+        (roomCoordinateSystem != null && roomCoordinateSystem.HasPendingPlacement) ||
+        (markerManager != null && markerManager.HasActivePlacement);
+
+    public void AddOrPlaceSource()
+    {
+        ResolveReferences();
+
+        if (HasPendingPlacement)
+            PlaceDetector();
+        else
+            StartQrScan();
+    }
+
+    public void CancelPendingPlacement()
+    {
+        ResolveReferences();
+
+        bool scanActive =
+            (qrScanner != null && qrScanner.IsScanActive) ||
+            (radiationReceiver != null && radiationReceiver.IsQrScanPending);
+
+        if (!HasPendingPlacement && !scanActive)
+            return;
+
+        CancelPlace();
+    }
+
     public void PlaceDetector()
     {
         ResolveReferences();
