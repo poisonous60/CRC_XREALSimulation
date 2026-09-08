@@ -9,6 +9,7 @@ Shader "RadVis/vertex_color"
     {
         Tags
         {
+            "RenderPipeline" = "UniversalPipeline"
             "Queue" = "Transparent"
             "RenderType" = "Transparent"
             "IgnoreProjector" = "True"
@@ -22,47 +23,50 @@ Shader "RadVis/vertex_color"
 
         Pass
         {
-            CGPROGRAM
+            Tags { "LightMode" = "UniversalForward" }
+
+            HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma target 3.0
             #pragma multi_compile_instancing
 
-            #include "UnityCG.cginc"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             struct AppData
             {
                 float4 vertex : POSITION;
-                fixed4 color : COLOR;
+                half4 color : COLOR;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
             {
                 float4 position : SV_POSITION;
-                fixed4 color : COLOR;
+                half4 color : COLOR;
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            fixed4 _Tint;
+            CBUFFER_START(UnityPerMaterial)
+            half4 _Tint;
+            CBUFFER_END
 
             Varyings Vert(AppData input)
             {
-                Varyings output;
+                Varyings output = (Varyings)0;
                 UNITY_SETUP_INSTANCE_ID(input);
-                UNITY_INITIALIZE_OUTPUT(Varyings, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-                output.position = UnityObjectToClipPos(input.vertex);
+                output.position = TransformObjectToHClip(input.vertex.xyz);
                 output.color = input.color;
                 return output;
             }
 
-            fixed4 Frag(Varyings input) : SV_Target
+            half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 return input.color * _Tint;
             }
-            ENDCG
+            ENDHLSL
         }
     }
 

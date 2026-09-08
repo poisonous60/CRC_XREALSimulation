@@ -9,6 +9,7 @@ Shader "RadVis/a_03_flat_more_alpha"
     {
         Tags
         {
+            "RenderPipeline" = "UniversalPipeline"
             "Queue" = "Transparent"
             "RenderType" = "Transparent"
             "IgnoreProjector" = "True"
@@ -25,12 +26,14 @@ Shader "RadVis/a_03_flat_more_alpha"
 
         Pass
         {
-            CGPROGRAM
+            Tags { "LightMode" = "UniversalForward" }
+
+            HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
 
-            #include "UnityCG.cginc"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             struct AppData
             {
@@ -44,27 +47,29 @@ Shader "RadVis/a_03_flat_more_alpha"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            fixed4 _Color;
+            CBUFFER_START(UnityPerMaterial)
+            half4 _Color;
+            CBUFFER_END
 
             Varyings Vert(AppData input)
             {
-                Varyings output;
+                Varyings output = (Varyings)0;
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-                output.position = UnityObjectToClipPos(input.vertex);
+                output.position = TransformObjectToHClip(input.vertex.xyz);
                 return output;
             }
 
-            fixed4 Frag(Varyings input) : SV_Target
+            half4 Frag(Varyings input) : SV_Target
             {
                 // Stable screen-space interleaved noise. _Color.a is the fraction
                 // of pixels that remain visible (0.35 = 35% visible, 65% real holes).
                 float2 pixel = floor(input.position.xy);
                 float dither = frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
                 clip(_Color.a - dither);
-                return fixed4(_Color.rgb, 1.0);
+                return half4(_Color.rgb, 1.0);
             }
-            ENDCG
+            ENDHLSL
         }
     }
 

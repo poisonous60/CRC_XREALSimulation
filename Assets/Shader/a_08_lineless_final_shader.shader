@@ -10,6 +10,7 @@ Shader "RadVis/a_08_lineless_final"
     {
         Tags
         {
+            "RenderPipeline" = "UniversalPipeline"
             "Queue" = "Transparent"
             "RenderType" = "Transparent"
             "IgnoreProjector" = "True"
@@ -25,13 +26,15 @@ Shader "RadVis/a_08_lineless_final"
 
         Pass
         {
-            CGPROGRAM
+            Tags { "LightMode" = "UniversalForward" }
+
+            HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma target 3.0
             #pragma multi_compile_instancing
 
-            #include "UnityCG.cginc"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             struct AppData
             {
@@ -48,26 +51,28 @@ Shader "RadVis/a_08_lineless_final"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            fixed4 _Color;
+            CBUFFER_START(UnityPerMaterial)
+            half4 _Color;
+            float _Cull;
+            CBUFFER_END
 
             Varyings Vert(AppData input)
             {
-                Varyings output;
+                Varyings output = (Varyings)0;
                 UNITY_SETUP_INSTANCE_ID(input);
-                UNITY_INITIALIZE_OUTPUT(Varyings, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-                output.position = UnityObjectToClipPos(input.vertex);
-                output.worldNormal = UnityObjectToWorldNormal(input.normal);
-                output.worldPosition = mul(unity_ObjectToWorld, input.vertex).xyz;
+                output.position = TransformObjectToHClip(input.vertex.xyz);
+                output.worldNormal = TransformObjectToWorldNormal(input.normal);
+                output.worldPosition = TransformObjectToWorld(input.vertex.xyz);
                 return output;
             }
 
-            fixed4 Frag(Varyings input) : SV_Target
+            half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
                 float3 normal = normalize(input.worldNormal);
-                float3 viewDirection = normalize(UnityWorldSpaceViewDir(input.worldPosition));
+                float3 viewDirection = normalize(GetWorldSpaceViewDir(input.worldPosition));
                 float normalFacing = saturate(abs(dot(normal, viewDirection)));
 
                 // A single soft volume with no contour, grid, or silhouette line.
@@ -75,9 +80,9 @@ Shader "RadVis/a_08_lineless_final"
                 // readable while large falloff shells stay out of the user's way.
                 float volumeShape = lerp(0.38, 1.0, smoothstep(0.0, 1.0, normalFacing));
                 float opacity = saturate(_Color.a) * volumeShape;
-                return fixed4(_Color.rgb, opacity);
+                return half4(_Color.rgb, opacity);
             }
-            ENDCG
+            ENDHLSL
         }
     }
 

@@ -14,6 +14,7 @@ Shader "RadVis/a_05_globe_filled"
     {
         Tags
         {
+            "RenderPipeline" = "UniversalPipeline"
             "Queue" = "Transparent"
             "RenderType" = "Transparent"
             "IgnoreProjector" = "True"
@@ -30,13 +31,15 @@ Shader "RadVis/a_05_globe_filled"
 
         Pass
         {
-            CGPROGRAM
+            Tags { "LightMode" = "UniversalForward" }
+
+            HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma target 3.0
             #pragma multi_compile_instancing
 
-            #include "UnityCG.cginc"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             struct AppData
             {
@@ -53,12 +56,14 @@ Shader "RadVis/a_05_globe_filled"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            fixed4 _Color;
+            CBUFFER_START(UnityPerMaterial)
+            half4 _Color;
             float _SurfaceBrightness;
             float _LongitudeLines;
             float _LatitudeLines;
             float _GridLineWidth;
             float _RimWidth;
+            CBUFFER_END
 
             float PeriodicLineCoverage(float coordinate, float halfWidth)
             {
@@ -72,22 +77,21 @@ Shader "RadVis/a_05_globe_filled"
 
             Varyings Vert(AppData input)
             {
-                Varyings output;
+                Varyings output = (Varyings)0;
                 UNITY_SETUP_INSTANCE_ID(input);
-                UNITY_INITIALIZE_OUTPUT(Varyings, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-                output.position = UnityObjectToClipPos(input.vertex);
-                output.worldNormal = UnityObjectToWorldNormal(input.normal);
-                output.worldPosition = mul(unity_ObjectToWorld, input.vertex).xyz;
+                output.position = TransformObjectToHClip(input.vertex.xyz);
+                output.worldNormal = TransformObjectToWorldNormal(input.normal);
+                output.worldPosition = TransformObjectToWorld(input.vertex.xyz);
                 return output;
             }
 
-            fixed4 Frag(Varyings input) : SV_Target
+            half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
                 float3 normal = normalize(input.worldNormal);
-                float3 viewDirection = normalize(UnityWorldSpaceViewDir(input.worldPosition));
+                float3 viewDirection = normalize(GetWorldSpaceViewDir(input.worldPosition));
 
                 // Generate the globe in camera space instead of mesh UV space.
                 // A plane anchor may rotate the marker object, but a sphere's
@@ -97,9 +101,9 @@ Shader "RadVis/a_05_globe_filled"
                 float longitudeAngle = atan2(viewNormal.x, viewNormal.z);
                 float latitudeAngle = asin(clamp(viewNormal.y, -1.0, 1.0));
                 float longitudeCoordinate =
-                    longitudeAngle * (_LongitudeLines / (2.0 * UNITY_PI));
+                    longitudeAngle * (_LongitudeLines / (2.0 * PI));
                 float latitudeCoordinate =
-                    (latitudeAngle / UNITY_PI + 0.5) * _LatitudeLines;
+                    (latitudeAngle / PI + 0.5) * _LatitudeLines;
 
                 float longitudeGrid = PeriodicLineCoverage(
                     longitudeCoordinate,
@@ -127,9 +131,9 @@ Shader "RadVis/a_05_globe_filled"
                 float surfaceBrightness = saturate(_SurfaceBrightness) * shellShape;
                 float lineBrightness = max(surfaceBrightness, saturate(_Color.a));
                 float brightness = lerp(surfaceBrightness, lineBrightness, lineCoverage);
-                return fixed4(_Color.rgb * brightness, 1.0);
+                return half4(_Color.rgb * brightness, 1.0);
             }
-            ENDCG
+            ENDHLSL
         }
     }
 

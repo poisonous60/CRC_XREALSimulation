@@ -17,6 +17,7 @@ Shader "RadVis/a_11_source_cloud"
     {
         Tags
         {
+            "RenderPipeline" = "UniversalPipeline"
             "Queue" = "Transparent"
             "RenderType" = "Transparent"
             "IgnoreProjector" = "True"
@@ -30,13 +31,15 @@ Shader "RadVis/a_11_source_cloud"
 
         Pass
         {
-            CGPROGRAM
+            Tags { "LightMode" = "UniversalForward" }
+
+            HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma target 3.0
             #pragma multi_compile_instancing
 
-            #include "UnityCG.cginc"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             struct AppData
             {
@@ -52,36 +55,37 @@ Shader "RadVis/a_11_source_cloud"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            CBUFFER_START(UnityPerMaterial)
             float _Level;
-            fixed4 _StopA;
-            fixed4 _StopB;
-            fixed4 _StopC;
-            fixed4 _StopD;
+            half4 _StopA;
+            half4 _StopB;
+            half4 _StopC;
+            half4 _StopD;
             float _CoreAlpha;
             float _CoreRadius;
             float _EdgeSoftness;
             float _EdgeRing;
+            CBUFFER_END
 
-            fixed3 RampColor(float level)
+            half3 RampColor(float level)
             {
                 float scaled = saturate(level) * 3.0;
-                fixed3 lowPair = lerp(_StopA.rgb, _StopB.rgb, saturate(scaled));
-                fixed3 midPair = lerp(lowPair, _StopC.rgb, saturate(scaled - 1.0));
+                half3 lowPair = lerp(_StopA.rgb, _StopB.rgb, saturate(scaled));
+                half3 midPair = lerp(lowPair, _StopC.rgb, saturate(scaled - 1.0));
                 return lerp(midPair, _StopD.rgb, saturate(scaled - 2.0));
             }
 
             Varyings Vert(AppData input)
             {
-                Varyings output;
+                Varyings output = (Varyings)0;
                 UNITY_SETUP_INSTANCE_ID(input);
-                UNITY_INITIALIZE_OUTPUT(Varyings, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-                output.position = UnityObjectToClipPos(input.vertex);
+                output.position = TransformObjectToHClip(input.vertex.xyz);
                 output.uv = input.uv;
                 return output;
             }
 
-            fixed4 Frag(Varyings input) : SV_Target
+            half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
@@ -95,12 +99,12 @@ Shader "RadVis/a_11_source_cloud"
                 float ring = _EdgeRing *
                     (1.0 - smoothstep(0.0, 0.06, abs(radius - 1.0 + 0.06)));
 
-                fixed3 rampColor = RampColor(_Level);
+                half3 rampColor = RampColor(_Level);
 
                 float opacity = saturate(body * _CoreAlpha + ring * _CoreAlpha);
-                return fixed4(rampColor, opacity * step(radius, 1.0));
+                return half4(rampColor, opacity * step(radius, 1.0));
             }
-            ENDCG
+            ENDHLSL
         }
     }
 

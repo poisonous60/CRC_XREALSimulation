@@ -9,6 +9,7 @@ Shader "RadVis/a_02_flat_first"
     {
         Tags
         {
+            "RenderPipeline" = "UniversalPipeline"
             "Queue" = "Transparent"
             "RenderType" = "Transparent"
             "IgnoreProjector" = "True"
@@ -22,12 +23,14 @@ Shader "RadVis/a_02_flat_first"
 
         Pass
         {
-            CGPROGRAM
+            Tags { "LightMode" = "UniversalForward" }
+
+            HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
 
-            #include "UnityCG.cginc"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             struct AppData
             {
@@ -41,22 +44,24 @@ Shader "RadVis/a_02_flat_first"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            fixed4 _Color;
+            CBUFFER_START(UnityPerMaterial)
+            half4 _Color;
+            CBUFFER_END
 
             Varyings Vert(AppData input)
             {
-                Varyings output;
+                Varyings output = (Varyings)0;
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-                output.position = UnityObjectToClipPos(input.vertex);
+                output.position = TransformObjectToHClip(input.vertex.xyz);
                 return output;
             }
 
-            fixed4 Frag(Varyings input) : SV_Target
+            half4 Frag(Varyings input) : SV_Target
             {
                 return _Color;
             }
-            ENDCG
+            ENDHLSL
         }
     }
 

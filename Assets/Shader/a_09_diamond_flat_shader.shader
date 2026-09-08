@@ -15,6 +15,7 @@ Shader "RadVis/a_09_diamond_flat"
     {
         Tags
         {
+            "RenderPipeline" = "UniversalPipeline"
             "Queue" = "Transparent"
             "RenderType" = "Transparent"
             "IgnoreProjector" = "True"
@@ -30,13 +31,15 @@ Shader "RadVis/a_09_diamond_flat"
 
         Pass
         {
-            CGPROGRAM
+            Tags { "LightMode" = "UniversalForward" }
+
+            HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma target 3.0
             #pragma multi_compile_instancing
 
-            #include "UnityCG.cginc"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             struct AppData
             {
@@ -52,26 +55,27 @@ Shader "RadVis/a_09_diamond_flat"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            fixed4 _Color;
+            CBUFFER_START(UnityPerMaterial)
+            half4 _Color;
             float _FillAlpha;
             float _OutlineWidth;
             float _OutlineIntensity;
             float _GlowWidth;
             float _GlowIntensity;
             float _GlowFalloff;
+            CBUFFER_END
 
             Varyings Vert(AppData input)
             {
-                Varyings output;
+                Varyings output = (Varyings)0;
                 UNITY_SETUP_INSTANCE_ID(input);
-                UNITY_INITIALIZE_OUTPUT(Varyings, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-                output.position = UnityObjectToClipPos(input.vertex);
+                output.position = TransformObjectToHClip(input.vertex.xyz);
                 output.uv = input.uv;
                 return output;
             }
 
-            fixed4 Frag(Varyings input) : SV_Target
+            half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
@@ -95,9 +99,9 @@ Shader "RadVis/a_09_diamond_flat"
                     outline * _OutlineIntensity +
                     glow * _GlowIntensity;
 
-                return fixed4(_Color.rgb, saturate(intensity * _Color.a));
+                return half4(_Color.rgb, saturate(intensity * _Color.a));
             }
-            ENDCG
+            ENDHLSL
         }
     }
 
