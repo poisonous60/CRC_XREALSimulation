@@ -51,6 +51,12 @@ public class MarkVisualConfig : ScriptableObject
     [Tooltip("Color at or below the marker manager's Hidden Max Cps. The center shows it only while Hide Low Cps is off; the off-screen cue always does.")]
     [SerializeField] private Color lowCpsColor = new Color(0.65f, 0.65f, 0.65f, 1f);
 
+    [Tooltip("Seconds the (a) marker takes to cross from its old color to a new one. 0 switches the color instantly.")]
+    [SerializeField, Min(0f)] private float statusColorFadeSeconds = 0f;
+
+    [Tooltip("Shape of that crossfade. X is elapsed fade progress 0 to 1, Y is the share of the new color shown. Straight line fades evenly.")]
+    [SerializeField] private AnimationCurve statusColorFadeCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
+
     [Header("(b) Off-screen Cue")]
     [Tooltip("Look of one off-screen indicator. Empty keeps the built-in arrow and detector id.")]
     [SerializeField] private OffscreenIndicatorView offscreenPrefab;
@@ -101,6 +107,7 @@ public class MarkVisualConfig : ScriptableObject
     public Color UnknownColor => unknownColor;
     public bool HideLowCps => hideLowCps;
     public Color LowCpsColor => lowCpsColor;
+    public float StatusColorFadeSeconds => Mathf.Max(0f, statusColorFadeSeconds);
     public OffscreenIndicatorView OffscreenPrefab => offscreenPrefab;
     public float OffscreenEdgeInset => offscreenEdgeInset;
     public bool OffscreenUseStatusColor => offscreenUseStatusColor;
@@ -153,6 +160,16 @@ public class MarkVisualConfig : ScriptableObject
     {
         config = sceneOverride;
         return config != null;
+    }
+
+    public float EvaluateStatusColorFade(float progress)
+    {
+        float clamped = Mathf.Clamp01(progress);
+
+        if (statusColorFadeCurve == null || statusColorFadeCurve.length == 0)
+            return clamped;
+
+        return Mathf.Clamp01(statusColorFadeCurve.Evaluate(clamped));
     }
 
     public bool TryGetStatusColor(float countsPerSecond, out Color color)

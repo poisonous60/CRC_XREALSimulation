@@ -11,6 +11,11 @@ public class SourceMarkerVisual : MonoBehaviour
     private MarkerVisualSettings settings;
     private FalloffShellVisual shells;
     private MarkerAlphaOverride alphaOverride;
+    private Color displayedColor = Color.clear;
+    private Color fadeFromColor = Color.clear;
+    private Color targetColor = Color.clear;
+    private float colorFadeProgress = 1f;
+    private bool hasDisplayedColor;
 
     public void Initialize(SourceMarker owner, MarkerVisualSettings visualSettings)
     {
@@ -84,8 +89,7 @@ public class SourceMarkerVisual : MonoBehaviour
             color.a = Mathf.Clamp01(originalAlpha + settings.controllerHoverAlphaBoost);
         }
 
-        marker.centerMaterial =
-            MarkerMaterials.SetRendererTransparentColor(marker.renderer, color, 10, false, settings);
+        SetTargetColor(color);
 
         // Keep the logical marker root alive so HUD distance, gaze selection,
         // Cancel, and anchor state continue to work even when Hide Low Cps hides
@@ -107,6 +111,65 @@ public class SourceMarkerVisual : MonoBehaviour
 
         UpdateLabel(radiationValue, false);
         return riskBand;
+    }
+
+    // Refresh runs on readings and drags, not every frame, so the crossfade needs its own tick.
+    private void LateUpdate()
+    {
+        if (colorFadeProgress >= 1f)
+            return;
+
+        float fadeSeconds = GetColorFadeSeconds();
+
+        colorFadeProgress = fadeSeconds > 0f
+            ? Mathf.MoveTowards(colorFadeProgress, 1f, Time.deltaTime / fadeSeconds)
+            : 1f;
+
+        ApplyColor(Color.Lerp(fadeFromColor, targetColor, EvaluateColorFade(colorFadeProgress)));
+    }
+
+    private void SetTargetColor(Color color)
+    {
+        float fadeSeconds = GetColorFadeSeconds();
+
+        if (!hasDisplayedColor || fadeSeconds <= 0f)
+        {
+            fadeFromColor = color;
+            targetColor = color;
+            colorFadeProgress = 1f;
+            ApplyColor(color);
+            return;
+        }
+
+        if (targetColor == color)
+            return;
+
+        fadeFromColor = displayedColor;
+        targetColor = color;
+        colorFadeProgress = 0f;
+    }
+
+    private void ApplyColor(Color color)
+    {
+        if (marker == null)
+            return;
+
+        displayedColor = color;
+        hasDisplayedColor = true;
+        marker.centerMaterial =
+            MarkerMaterials.SetRendererTransparentColor(marker.renderer, color, 10, false, settings);
+    }
+
+    private static float GetColorFadeSeconds()
+    {
+        return MarkVisualConfig.TryLoad(out MarkVisualConfig config) ? config.StatusColorFadeSeconds : 0f;
+    }
+
+    private static float EvaluateColorFade(float progress)
+    {
+        return MarkVisualConfig.TryLoad(out MarkVisualConfig config)
+            ? config.EvaluateStatusColorFade(progress)
+            : Mathf.Clamp01(progress);
     }
 
     public void UpdateLabel(float radiationValue, bool moved)

@@ -26,6 +26,31 @@ MonoBehaviour:
   unknownColor: {r: 0.65, g: 0.65, b: 0.65, a: 1}
   hideLowCps: 0
   lowCpsColor: {r: 0.65, g: 0.65, b: 0.65, a: 1}
+  statusColorFadeSeconds: 0.2
+  statusColorFadeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   offscreenPrefab: {fileID: 6002855538228716833, guid: da70caf432a00364586c24ff937e03a5, type: 3}
   offscreenEdgeInset: 1
   offscreenUseStatusColor: 1

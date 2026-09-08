@@ -51,7 +51,9 @@ public class MarkerVisibilityPolicy
                        radiationReady &&
                        (previewIgnoresServerGate || serverReady);
 
-        marker.isVisible = visible;
+        // The preview is an aiming aid, not a reading, so every look that reports a
+        // measurement reads this as hidden until Place commits the marker.
+        marker.isVisible = visible && !isPreview;
 
         bool centerVisible = marker.centerVisualRequested ||
                              (showGrayPreviewSphere && isPreview);
@@ -82,7 +84,7 @@ public class MarkerVisibilityPolicy
                 bodyRenderer.enabled = !usePlacementVisual &&
                     (isCenter
                         ? visible && centerVisible
-                        : visible && wasEnabledAtCreation);
+                        : visible && !isPreview && wasEnabledAtCreation);
             }
         }
         else if (marker.renderer != null)
@@ -96,7 +98,7 @@ public class MarkerVisibilityPolicy
             {
                 FalloffShellInfo shell = marker.falloffShells[i];
                 if (shell != null && shell.renderer != null)
-                    shell.renderer.enabled = visible && shell.visualRequested;
+                    shell.renderer.enabled = visible && !isPreview && shell.visualRequested;
             }
         }
 
