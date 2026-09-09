@@ -240,7 +240,7 @@ public class RadiationReceiver : MonoBehaviour
     public void ConnectToServerWithIp(string ip, int port)
     {
         isDiscoveredServerAttempt = true;
-        SaveAndConnect(ip, port);
+        SaveAndConnect(ip, port, false);
     }
 
     public void SetIpText(string ip)
@@ -252,10 +252,10 @@ public class RadiationReceiver : MonoBehaviour
     private void SaveAndConnect(string ip)
     {
         isDiscoveredServerAttempt = false;
-        SaveAndConnect(ip, serverPort);
+        SaveAndConnect(ip, serverPort, true);
     }
 
-    private void SaveAndConnect(string ip, int port)
+    private void SaveAndConnect(string ip, int port, bool allowAutomaticQrStart)
     {
         activeServerPort = port > 0 ? port : serverPort;
         ip = CleanIp(ip);
@@ -266,7 +266,7 @@ public class RadiationReceiver : MonoBehaviour
         }
 
         SaveIp(ip);
-        Connect(ip, true, false);
+        Connect(ip, allowAutomaticQrStart, false);
     }
 
     private void SaveTypedIp(string ip)

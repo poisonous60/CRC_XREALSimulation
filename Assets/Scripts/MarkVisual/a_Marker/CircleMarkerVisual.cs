@@ -1,17 +1,15 @@
 using UnityEngine;
 
 /// <summary>
-/// Sizes and shades a circle marker from its own config, leaving the marker root scale to the manager.
+/// Applies one circle look's distance rule and shading on top of the marker root scale the manager sets.
 /// </summary>
 [DisallowMultipleComponent]
 public class CircleMarkerVisual : MonoBehaviour
 {
-    private const float MinimumRootScale = 0.0001f;
-
     private static readonly int BloomBoostId = Shader.PropertyToID("_BloomBoost");
 
     [Header("Look")]
-    [Tooltip("Size rule for this look. Empty leaves the mesh at its authored scale.")]
+    [Tooltip("Distance rule and shading for this look. Empty leaves the mesh at its authored scale.")]
     [SerializeField] private CircleMarkerConfig config;
 
     [Tooltip("Child carrying the mesh. Empty means the first child.")]
@@ -61,14 +59,8 @@ public class CircleMarkerVisual : MonoBehaviour
                 return;
         }
 
-        // The manager owns the root scale, so the size rule goes on the mesh child.
-        // Scaling the root would also resize the falloff shells and the ray pick radius.
-        float rootScale = Mathf.Abs(transform.localScale.x);
-
-        if (rootScale < MinimumRootScale)
-            return;
-
+        // The root carries Marker Size Meters, so the child only multiplies the distance rule onto it.
         float distance = Vector3.Distance(head.transform.position, transform.position);
-        visual.localScale = Vector3.one * (config.GetWorldDiameter(distance) / rootScale);
+        visual.localScale = Vector3.one * config.GetDistanceScale(distance);
     }
 }
