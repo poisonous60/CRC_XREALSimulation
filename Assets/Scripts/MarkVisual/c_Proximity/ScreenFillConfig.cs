@@ -8,6 +8,7 @@ public class ScreenFillConfig : ScriptableObject
 {
     [Header("Range")]
     [Tooltip("Head-to-source distance at which the fill turns on. Independent of the marker's own size.")]
+    [RuntimeTunable(0.1f, 10f, "Fill radius (m)")]
     [SerializeField, Min(0.05f)] private float triggerRadiusMeters = 1.5f;
 
     [Header("Look")]

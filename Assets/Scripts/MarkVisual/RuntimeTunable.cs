@@ -27,18 +27,22 @@ public sealed class RuntimeTunableField
     private readonly ScriptableObject owner;
     private readonly FieldInfo field;
     private readonly RuntimeTunableAttribute attribute;
+    private readonly string category;
 
     public RuntimeTunableField(
         ScriptableObject owningAsset,
         FieldInfo tunableField,
-        RuntimeTunableAttribute tunableAttribute)
+        RuntimeTunableAttribute tunableAttribute,
+        string owningCategory)
     {
         owner = owningAsset;
         field = tunableField;
         attribute = tunableAttribute;
+        category = owningCategory;
     }
 
     public string Label => attribute.Label;
+    public string Category => category;
     public float Minimum => attribute.Minimum;
     public float Maximum => attribute.Maximum;
     public string SaveKey => SaveKeyPrefix + owner.name + "." + field.Name;
@@ -58,6 +62,11 @@ public static class RuntimeTunable
     private const BindingFlags FieldFlags =
         BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
+    private const string MarkerCategory = "(a) Marker";
+    private const string OffscreenCategory = "(b) Off-screen Cue";
+    private const string ProximityCategory = "(c) Proximity Information";
+    private const string UncertaintyCategory = "(d) Uncertainty Footprint";
+
     public static void Collect(MarkVisualConfig config, List<RuntimeTunableField> results)
     {
         results.Clear();
@@ -66,12 +75,13 @@ public static class RuntimeTunable
             return;
 
         HashSet<ScriptableObject> visited = new HashSet<ScriptableObject>();
-        CollectAsset(config, visited, results);
-        CollectPrefab(config.MarkerPrefab, visited, results);
+        CollectAsset(config, visited, results, MarkerCategory);
+        CollectPrefab(config.MarkerPrefab, visited, results, MarkerCategory);
         CollectPrefab(
             config.OffscreenPrefab != null ? config.OffscreenPrefab.gameObject : null,
             visited,
-            results);
+            results,
+            OffscreenCategory);
 
         IReadOnlyList<SourcePresentation> proximity = config.ProximityPrefabs;
         if (proximity != null)
@@ -79,7 +89,7 @@ public static class RuntimeTunable
             for (int index = 0; index < proximity.Count; index++)
             {
                 SourcePresentation entry = proximity[index];
-                CollectPrefab(entry != null ? entry.gameObject : null, visited, results);
+                CollectPrefab(entry != null ? entry.gameObject : null, visited, results, ProximityCategory);
             }
         }
 
@@ -90,7 +100,7 @@ public static class RuntimeTunable
         for (int index = 0; index < uncertainty.Count; index++)
         {
             UncertaintyPresentation entry = uncertainty[index];
-            CollectPrefab(entry != null ? entry.gameObject : null, visited, results);
+            CollectPrefab(entry != null ? entry.gameObject : null, visited, results, UncertaintyCategory);
         }
     }
 
@@ -129,7 +139,8 @@ public static class RuntimeTunable
     private static void CollectPrefab(
         GameObject prefab,
         HashSet<ScriptableObject> visited,
-        List<RuntimeTunableField> results)
+        List<RuntimeTunableField> results,
+        string category)
     {
         if (prefab == null)
             return;
@@ -152,7 +163,7 @@ public static class RuntimeTunable
                 ScriptableObject asset = fields[fieldIndex].GetValue(component) as ScriptableObject;
 
                 if (asset != null)
-                    CollectAsset(asset, visited, results);
+                    CollectAsset(asset, visited, results, category);
             }
         }
     }
@@ -160,7 +171,8 @@ public static class RuntimeTunable
     private static void CollectAsset(
         ScriptableObject asset,
         HashSet<ScriptableObject> visited,
-        List<RuntimeTunableField> results)
+        List<RuntimeTunableField> results,
+        string category)
     {
         if (asset == null || !visited.Add(asset))
             return;
@@ -178,7 +190,7 @@ public static class RuntimeTunable
                 field.GetCustomAttribute<RuntimeTunableAttribute>();
 
             if (attribute != null)
-                results.Add(new RuntimeTunableField(asset, field, attribute));
+                results.Add(new RuntimeTunableField(asset, field, attribute, category));
         }
     }
 }

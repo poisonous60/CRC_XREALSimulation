@@ -271,6 +271,8 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
 
     public bool HasActiveDetectorMove => activeDetectorMoveSession != null;
 
+    public string SourceMarkerKey => sourceMarkerKey;
+
     public bool RequiresRoomCalibration =>
         enableRoomCoordinateSystem && requireRoomCalibrationBeforeDetectorPlacement;
 

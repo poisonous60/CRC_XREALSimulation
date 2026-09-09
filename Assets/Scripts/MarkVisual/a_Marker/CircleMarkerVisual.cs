@@ -18,21 +18,28 @@ public class CircleMarkerVisual : MonoBehaviour
     [Tooltip("Camera the distance is measured from. Empty means Camera.main.")]
     [SerializeField] private Camera head;
 
+    private MarkerAlphaOverride alphaOverride;
+    private Renderer circleRenderer;
+
     public CircleMarkerConfig Config => config;
 
     // Runs before the manager builds SourceMarkerVisual, so the alpha it reads back
     // off MarkerAlphaOverride is already the config's.
     private void Awake()
     {
+        alphaOverride = GetComponent<MarkerAlphaOverride>();
+        circleRenderer = GetComponentInChildren<Renderer>(true);
+        ApplyLook();
+    }
+
+    // Repeated every frame so the settings screen sliders show up without a respawn.
+    private void ApplyLook()
+    {
         if (config == null)
             return;
 
-        MarkerAlphaOverride alphaOverride = GetComponent<MarkerAlphaOverride>();
-
         if (alphaOverride != null)
             alphaOverride.SetMarkerAlpha(config.MarkerAlpha);
-
-        Renderer circleRenderer = GetComponentInChildren<Renderer>(true);
 
         if (circleRenderer != null)
             circleRenderer.material.SetFloat(BloomBoostId, config.BloomBoost);
@@ -42,6 +49,8 @@ public class CircleMarkerVisual : MonoBehaviour
     {
         if (config == null)
             return;
+
+        ApplyLook();
 
         if (visual == null)
         {

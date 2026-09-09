@@ -17,9 +17,11 @@ public class CircleMarkerConfig : ScriptableObject
 
     [Header("Look")]
     [Tooltip("Opacity this look draws at. Overwrites Marker Alpha Override on the prefab, which is what the manager reads.")]
+    [RuntimeTunable(0f, 1f, "Marker alpha")]
     [SerializeField, Range(0f, 1f)] private float markerAlpha = 0.5f;
 
     [Tooltip("Multiplier on the circle color before it is written. URP Bloom only catches pixels brighter than its threshold, so 1 glows nothing and higher values widen the halo.")]
+    [RuntimeTunable(1f, 8f, "Bloom boost")]
     [SerializeField, Range(1f, 8f)] private float bloomBoost = 1f;
 
     public float ReferenceDistanceMeters => Mathf.Max(MinimumDistanceMeters, referenceDistanceMeters);

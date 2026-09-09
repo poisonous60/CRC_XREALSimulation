@@ -6,9 +6,9 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Head-locked AR glasses HUD for server status, detector readings, live glasses-to-detector
-/// distances, gaze highlighting, and four-direction off-screen indicators. It builds its
-/// own world-space canvas so no Inspector UI references are required.
+/// Head-locked AR glasses HUD for server status, detector readings, gaze highlighting,
+/// and four-direction off-screen indicators. It builds its own world-space canvas so no
+/// Inspector UI references are required.
 /// </summary>
 [DisallowMultipleComponent]
 public partial class ARDetectorHud : MonoBehaviour
@@ -31,7 +31,6 @@ public partial class ARDetectorHud : MonoBehaviour
     [SerializeField] private Vector2 hudPixelSize = new Vector2(720f, 430f);
     [SerializeField, Min(10f)] private float hudFontSize = 27f;
     [SerializeField] private string radiationUnit = "CPS";
-    [SerializeField] private string distanceUnit = "m";
 
     [Tooltip("Maximum detector rows kept inside the fixed XREAL HUD. Extra rows are summarized.")]
     [SerializeField, Min(1)] private int maxVisibleDetectorRows = 9;

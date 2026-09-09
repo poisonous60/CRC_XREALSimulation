@@ -4,7 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Fills the settings screen with one slider per tunable field the active look exposes.
+/// Fills the settings screen with one slider per tunable field the active look exposes,
+/// grouped under a header row per (a)/(b)/(c)/(d) look the field came from.
 /// </summary>
 [DisallowMultipleComponent]
 public class SettingsScreenBuilder : MonoBehaviour
@@ -48,14 +49,52 @@ public class SettingsScreenBuilder : MonoBehaviour
         RuntimeTunable.Collect(config, tunables);
 
         Transform parent = rowContainer != null ? rowContainer : rowTemplate.transform.parent;
+        string currentCategory = null;
 
         for (int index = 0; index < tunables.Count; index++)
-            SpawnRow(tunables[index], parent);
+        {
+            RuntimeTunableField tunable = tunables[index];
+
+            // Collect walks the looks in (a) to (d) order, so a change of category ends a group.
+            if (tunable.Category != currentCategory)
+            {
+                currentCategory = tunable.Category;
+                SpawnHeader(currentCategory, parent);
+            }
+
+            SpawnRow(tunable, parent);
+        }
     }
 
     public void Flush()
     {
         RuntimeTunable.Flush();
+    }
+
+    private void SpawnHeader(string category, Transform parent)
+    {
+        GameObject row = Instantiate(rowTemplate, parent);
+        row.name = "Header_" + category;
+        row.SetActive(true);
+        spawnedRows.Add(row);
+
+        TMP_Text labelText = FindText(row, labelTextName);
+        TMP_Text valueText = FindText(row, valueTextName);
+        Slider slider = row.GetComponentInChildren<Slider>(true);
+
+        if (labelText != null)
+        {
+            labelText.text = category;
+            labelText.fontStyle |= FontStyles.Bold;
+            labelText.textWrappingMode = TextWrappingModes.NoWrap;
+            labelText.overflowMode = TextOverflowModes.Ellipsis;
+        }
+
+        if (valueText != null)
+            valueText.gameObject.SetActive(false);
+
+        if (slider != null)
+            slider.gameObject.SetActive(false);
     }
 
     private void SpawnRow(RuntimeTunableField tunable, Transform parent)

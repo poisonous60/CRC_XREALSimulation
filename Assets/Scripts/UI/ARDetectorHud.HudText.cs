@@ -63,8 +63,7 @@ public partial class ARDetectorHud
         }
         else
         {
-            textBuilder.Append("\n<color=#A8A8A8><b>DETECTOR   CPS   DISTANCE</b></color>");
-            Vector3 glassesPosition = targetCamera.transform.position;
+            textBuilder.Append("\n<color=#A8A8A8><b>DETECTOR   CPS</b></color>");
             int selectedDisplayIndex = FindDisplayDetectorIndex(selectedId);
             int rowLimit = maxVisibleDetectorRows > 0 ? maxVisibleDetectorRows : 9;
             int visibleRowCount = Mathf.Min(
@@ -118,28 +117,6 @@ public partial class ARDetectorHud
                 if (!string.IsNullOrWhiteSpace(radiationUnit))
                     textBuilder.Append(" ").Append(EscapeRichText(radiationUnit));
 
-                textBuilder.Append("   ");
-
-                if (hasPlacedMarker)
-                {
-                    float distanceMeters = Vector3.Distance(glassesPosition, markerState.worldPosition);
-                    if (IsFinite(distanceMeters))
-                    {
-                        textBuilder.Append(distanceMeters.ToString("F2"));
-                        textBuilder.Append(" ").Append(EscapeRichText(GetDistanceUnit()));
-                    }
-                    else
-                    {
-                        textBuilder.Append("--");
-                    }
-                }
-                else
-                {
-                    // The server can report a detector before its sphere is placed.
-                    // There is no world coordinate from which to calculate a distance yet.
-                    textBuilder.Append("--");
-                }
-
                 textBuilder.Append(selected ? "</b></color>" : "</color>");
             }
 
@@ -168,7 +145,7 @@ public partial class ARDetectorHud
         for (int i = 0; i < markerStates.Count; i++)
         {
             string detectorId = NormalizeDetectorId(markerStates[i].detectorId);
-            if (string.IsNullOrEmpty(detectorId))
+            if (string.IsNullOrEmpty(detectorId) || IsSourceMarkerId(detectorId))
                 continue;
 
             markerIndexByDetectorId[detectorId] = i;
@@ -180,12 +157,15 @@ public partial class ARDetectorHud
 
         foreach (string detectorId in latestDeviceData.Keys)
         {
+            if (IsSourceMarkerId(detectorId))
+                continue;
+
             if (displayDetectorIdSet.Add(detectorId))
                 sortedDisplayDetectorIds.Add(detectorId);
         }
 
         // Keep every placed detector ahead of server-only rows so finite HUD space
-        // is used for entries that can actually show a glasses distance.
+        // is used for entries that have a sphere in the room.
         if (placedDetectorCount > 1)
             sortedDisplayDetectorIds.Sort(0, placedDetectorCount, StringComparer.OrdinalIgnoreCase);
 
@@ -213,6 +193,15 @@ public partial class ARDetectorHud
         return -1;
     }
 
+    private bool IsSourceMarkerId(string detectorId)
+    {
+        string sourceKey = markerManager != null ? markerManager.SourceMarkerKey : "SOURCE";
+        return string.Equals(
+            NormalizeDetectorId(detectorId),
+            NormalizeDetectorId(sourceKey),
+            StringComparison.OrdinalIgnoreCase);
+    }
+
     private string NormalizeDetectorId(string detectorId)
     {
         return string.IsNullOrWhiteSpace(detectorId) ? "" : detectorId.Trim();
@@ -221,11 +210,6 @@ public partial class ARDetectorHud
     private bool IsFinite(float value)
     {
         return !float.IsNaN(value) && !float.IsInfinity(value);
-    }
-
-    private string GetDistanceUnit()
-    {
-        return string.IsNullOrWhiteSpace(distanceUnit) ? "m" : distanceUnit;
     }
 
     private string EscapeRichText(string value)

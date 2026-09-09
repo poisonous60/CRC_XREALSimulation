@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a190f76254c753f4785f670539471d09, type: 3}
   m_Name: ControllerScreenConfig
   m_EditorClassIdentifier: 
-  unlockTapCount: 5
+  unlockTapCount: 8
   unlockWindowSeconds: 1
   tapGroupingSeconds: 0.05
