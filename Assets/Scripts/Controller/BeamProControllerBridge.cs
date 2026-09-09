@@ -11,7 +11,6 @@ using UnityEngine.UI;
 ///
 /// Button OnClick examples:
 /// - BeamProControllerBridge.ConnectToServer()
-/// - BeamProControllerBridge.AddOrPlaceSource()
 /// - BeamProControllerBridge.StartQrScan()
 /// - BeamProControllerBridge.StopQrScan()
 /// - BeamProControllerBridge.PlaceDetector()

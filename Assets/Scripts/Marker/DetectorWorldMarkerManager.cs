@@ -378,8 +378,30 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
             LoadSavedCoordinatesWithoutAnchors();
     }
 
+    // Marker Size Meters is copied once in OnEnable, so a settings-screen slider or an Inspector
+    // edit made during Play reaches the placed markers only through this comparison.
+    private void ApplyConfigMarkerSizeIfChanged()
+    {
+        if (!MarkVisualConfig.TryLoad(out MarkVisualConfig presentationConfig) ||
+            Mathf.Approximately(fixedMarkerSize, presentationConfig.MarkerSizeMeters))
+        {
+            return;
+        }
+
+        fixedMarkerSize = Mathf.Max(0.001f, presentationConfig.MarkerSizeMeters);
+
+        foreach (KeyValuePair<string, SourceMarker> pair in markers)
+        {
+            SourceMarker marker = pair.Value;
+
+            if (marker != null && marker.root != null)
+                marker.root.transform.localScale = Vector3.one * fixedMarkerSize;
+        }
+    }
+
     private void LateUpdate()
     {
+        ApplyConfigMarkerSizeIfChanged();
         RefreshRadiationSnapshotVisibilityIfExpired();
         EnsurePlacementOrigin();
         UpdateFollowingMarkerPosition();

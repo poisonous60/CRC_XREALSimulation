@@ -2412,6 +2412,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2005687755}
   - component: {fileID: 2005687756}
+  - component: {fileID: 2005687757}
   m_Layer: 0
   m_Name: RadiationReceiver
   m_TagString: Untagged
@@ -2454,6 +2455,7 @@ MonoBehaviour:
   serverPort: 5002
   maximumDataSilenceSeconds: 5
   autoReconnectSavedServer: 1
+  dialSavedServerOnStart: 0
   automaticReconnectStartDelay: 0.35
   automaticReconnectInitialRetryDelay: 2
   automaticReconnectMaxRetryDelay: 15
@@ -2465,6 +2467,21 @@ MonoBehaviour:
   qrScanner: {fileID: 732363537}
   startQrCameraAfterConnect: 0
   qrStartDelayAfterConnect: 0.3
+--- !u!114 &2005687757
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2005687753}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2399b1f91bedf5540992fdc757399f09, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  radiationReceiver: {fileID: 2005687756}
+  serviceType: _radvis._tcp.local
+  queryInterval: 2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

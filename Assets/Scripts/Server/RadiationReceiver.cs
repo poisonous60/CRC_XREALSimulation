@@ -58,6 +58,8 @@ public class RadiationReceiver : MonoBehaviour
 
     [Header("Saved Server Reconnection")]
     [SerializeField] private bool autoReconnectSavedServer = true;
+    [Tooltip("Off while ServerAutoConnector looks the server up instead of dialing the last IP at startup.")]
+    [SerializeField] private bool dialSavedServerOnStart = false;
     [SerializeField, Min(0f)] private float automaticReconnectStartDelay = 0.35f;
     [SerializeField, Min(0.25f)] private float automaticReconnectInitialRetryDelay = 2f;
     [SerializeField, Min(0.25f)] private float automaticReconnectMaxRetryDelay = 15f;
@@ -65,7 +67,7 @@ public class RadiationReceiver : MonoBehaviour
     [SerializeField] private bool reconnectWhenApplicationResumes = true;
 
     [Header("Keyboard On Start")]
-    [SerializeField] private bool openKeyboardOnStart = true;
+    [SerializeField] private bool openKeyboardOnStart = false;
     [SerializeField] private float keyboardOpenDelay = 0.5f;
     [SerializeField] private bool connectWhenKeyboardDone = true;
 
@@ -85,6 +87,8 @@ public class RadiationReceiver : MonoBehaviour
     private bool automaticQrStartExpected;
     private string savedIp;
     private string activeServerIp;
+    private int activeServerPort;
+    private bool isDiscoveredServerAttempt;
     private bool hasSavedServerIp;
     private bool isConnecting;
     private bool isServerConnected;
@@ -100,6 +104,8 @@ public class RadiationReceiver : MonoBehaviour
     public Color CurrentStatusColor => currentStatusColor;
     public string LatestServerTime { get; private set; } = "";
     public string CurrentServerIp => string.IsNullOrWhiteSpace(savedIp) ? defaultIp : savedIp;
+    public int CurrentServerPort => activeServerPort > 0 ? activeServerPort : serverPort;
+    public bool IsDiscoveredServerAttempt => isDiscoveredServerAttempt;
     public bool HasSavedServerIp => hasSavedServerIp;
     public bool IsConnected => isServerConnected;
     public bool HasFreshRadiationData =>
@@ -125,12 +131,16 @@ public class RadiationReceiver : MonoBehaviour
         // immediately copy the saved IP before this component's Start runs.
         string persistedIp = PlayerPrefs.GetString(ServerIpPlayerPrefsKey, "");
         savedIp = CleanIp(persistedIp);
-        hasSavedServerIp = PlayerPrefs.HasKey(ServerIpPlayerPrefsKey) &&
-                           !string.IsNullOrWhiteSpace(savedIp);
+        bool hasPersistedIp = PlayerPrefs.HasKey(ServerIpPlayerPrefsKey) &&
+                              !string.IsNullOrWhiteSpace(savedIp);
 
-        if (!hasSavedServerIp)
+        // Without the startup dial the persisted IP stays a prefill and must not arm reconnects.
+        hasSavedServerIp = dialSavedServerOnStart && hasPersistedIp;
+
+        if (!hasPersistedIp)
             savedIp = CleanIp(defaultIp);
 
+        activeServerPort = serverPort;
         ResetAutomaticReconnectDelay();
     }
 
@@ -153,7 +163,7 @@ public class RadiationReceiver : MonoBehaviour
         PublishServerConnection(false, true);
         hasStarted = true;
 
-        if (autoReconnectSavedServer && hasSavedServerIp)
+        if (dialSavedServerOnStart && autoReconnectSavedServer && hasSavedServerIp)
             ScheduleAutomaticReconnect(automaticReconnectStartDelay);
         else if (openKeyboardOnStart)
             StartCoroutine(OpenKeyboardAfterDelay());
@@ -202,7 +212,7 @@ public class RadiationReceiver : MonoBehaviour
         if (connectWhenKeyboardDone)
             SaveAndConnect(ip);
         else
-            SaveIp(ip);
+            SaveTypedIp(ip);
 #endif
     }
 
@@ -224,7 +234,13 @@ public class RadiationReceiver : MonoBehaviour
 
     public void ConnectToServerWithIp(string ip)
     {
-        SaveAndConnect(ip);
+        ConnectToServerWithIp(ip, serverPort);
+    }
+
+    public void ConnectToServerWithIp(string ip, int port)
+    {
+        isDiscoveredServerAttempt = true;
+        SaveAndConnect(ip, port);
     }
 
     public void SetIpText(string ip)
@@ -235,6 +251,13 @@ public class RadiationReceiver : MonoBehaviour
 
     private void SaveAndConnect(string ip)
     {
+        isDiscoveredServerAttempt = false;
+        SaveAndConnect(ip, serverPort);
+    }
+
+    private void SaveAndConnect(string ip, int port)
+    {
+        activeServerPort = port > 0 ? port : serverPort;
         ip = CleanIp(ip);
         if (string.IsNullOrEmpty(ip))
         {
@@ -244,6 +267,14 @@ public class RadiationReceiver : MonoBehaviour
 
         SaveIp(ip);
         Connect(ip, true, false);
+    }
+
+    private void SaveTypedIp(string ip)
+    {
+        // A typed address carries no port of its own, so a discovered one must not stay attached to it.
+        activeServerPort = serverPort;
+        isDiscoveredServerAttempt = false;
+        SaveIp(ip);
     }
 
     private void SaveIp(string ip)
@@ -295,7 +326,7 @@ public class RadiationReceiver : MonoBehaviour
         if (isAutomaticReconnect && (isConnecting || IsConnected))
             return;
 
-        string url = $"ws://{cleanIp}:{serverPort}";
+        string url = $"ws://{cleanIp}:{(activeServerPort > 0 ? activeServerPort : serverPort)}";
         Debug.Log($"Trying connecting to URL: {url}");
 
         CancelScheduledAutomaticReconnect();
@@ -850,7 +881,7 @@ public class RadiationReceiver : MonoBehaviour
             else if (activeKeyboard.status == TouchScreenKeyboard.Status.Canceled ||
                      activeKeyboard.status == TouchScreenKeyboard.Status.LostFocus)
             {
-                SaveIp(ipInputField.text);
+                SaveTypedIp(ipInputField.text);
                 ipInputField.DeactivateInputField();
                 activeKeyboard = null;
             }

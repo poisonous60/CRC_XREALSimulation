@@ -264,9 +264,9 @@ public partial class BeamProControllerBridge
                 : roomPending
                     ? "Place Room"
                     : detectorPending
-                        ? "Place Source"
+                        ? "Release to Fix"
                         : roomCalibrated
-                            ? "Add Source"
+                            ? "Hold to Place"
                             : !connected
                                 ? "Connect & Scan"
                                 : "Scan Room QR",

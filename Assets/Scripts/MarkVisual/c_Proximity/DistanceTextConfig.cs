@@ -8,6 +8,7 @@ public class DistanceTextConfig : ScriptableObject
 {
     [Header("Size")]
     [Tooltip("Height of one text line on the glasses display, in pixels.")]
+    [RuntimeTunable(8f, 72f, "Text size (px)")]
     [SerializeField, Min(1f)] private float textSizePixels = 24f;
 
     [Tooltip("On: the text holds the pixel size above at every distance. Off: it shrinks with distance like a real object.")]
@@ -28,6 +29,7 @@ public class DistanceTextConfig : ScriptableObject
 
     [Header("Range")]
     [Tooltip("Distance above which the line is hidden. 0 keeps it visible at every distance.")]
+    [RuntimeTunable(0f, 10f, "Text range (m)")]
     [SerializeField, Min(0f)] private float maximumVisibleDistanceMeters = 0f;
 
     public float TextSizePixels => Mathf.Max(1f, textSizePixels);

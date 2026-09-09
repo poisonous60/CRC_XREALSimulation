@@ -11,16 +11,6 @@ public partial class BeamProControllerBridge
         (roomCoordinateSystem != null && roomCoordinateSystem.HasPendingPlacement) ||
         (markerManager != null && markerManager.HasActivePlacement);
 
-    public void AddOrPlaceSource()
-    {
-        ResolveReferences();
-
-        if (HasPendingPlacement)
-            PlaceDetector();
-        else
-            StartQrScan();
-    }
-
     public void CancelPendingPlacement()
     {
         ResolveReferences();

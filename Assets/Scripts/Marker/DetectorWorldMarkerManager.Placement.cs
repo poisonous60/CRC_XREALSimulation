@@ -62,7 +62,7 @@ public partial class DetectorWorldMarkerManager
         resultMessage = !started
             ? "Source placement did not start"
             : followPreviewCenterUntilPlaced
-                ? "Aim the glasses at the Source, then tap Place"
+                ? "Aim the glasses at the Source, then release"
                 : "Source placed ahead of the glasses";
         return started;
     }

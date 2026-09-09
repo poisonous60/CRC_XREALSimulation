@@ -30,6 +30,7 @@ public class MarkVisualConfig : ScriptableObject
     [SerializeField] private GameObject markerPrefab;
 
     [Tooltip("Marker size in meters. Radiation changes color only, never size.")]
+    [RuntimeTunable(0.02f, 1f, "Marker size (m)")]
     [SerializeField, Min(MinimumMarkerSizeMeters)] private float markerSizeMeters = 0.2f;
 
     [Tooltip("Look drawn instead of Marker Prefab while Add Source / Place is in progress. It keeps its own materials, so the CPS colors and the manager's Placement Preview Visual tint do not reach it. Empty keeps the tinted Marker Prefab.")]

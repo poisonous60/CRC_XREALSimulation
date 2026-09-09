@@ -22,6 +22,10 @@ public sealed class MarkVisualConfigOverride : MonoBehaviour
         }
 
         MarkVisualConfig.SetSceneOverride(config);
+
+        // Saved slider values have to land before the marker manager copies Marker Size Meters
+        // in its own OnEnable, so this runs here rather than when the settings screen opens.
+        RuntimeTunable.Restore(config);
     }
 
     private void OnDestroy()
