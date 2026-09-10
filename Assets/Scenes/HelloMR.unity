@@ -814,7 +814,7 @@ MonoBehaviour:
   planeDetectionMode: 3
   minPlaneHitDistanceMeters: 0.15
   maxPlaneHitDistanceMeters: 10
-  hidePreviewWithoutPlaneHit: 1
+  hidePreviewWithoutPlaneHit: 0
   waitingForPlaneStateLabel: aim at a detected plane
   useCoordinateDatabase: 1
   coordinateDatabase: {fileID: 906282734}
@@ -912,7 +912,6 @@ MonoBehaviour:
   hudPixelSize: {x: 720, y: 430}
   hudFontSize: 27
   radiationUnit: CPS
-  distanceUnit: m
   maxVisibleDetectorRows: 9
   gazeSelectionAngleDegrees: 8
   screenEdgeMargin: 0.05

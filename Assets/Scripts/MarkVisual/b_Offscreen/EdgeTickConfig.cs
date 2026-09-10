@@ -24,10 +24,14 @@ public class EdgeTickConfig : ScriptableObject
     [Tooltip("Shape of the fade. X is elapsed fade progress 0 to 1, Y is the share of full opacity shown. Straight line fades evenly.")]
     [SerializeField] private AnimationCurve fadeCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
 
+    [Tooltip("Fade the tick out on the edge it leaves and back in on the edge it arrives at. Off snaps it to the new edge.")]
+    [SerializeField] private bool fadeOnEdgeChange = true;
+
     public float Length => Mathf.Max(1f, length);
     public float Thickness => Mathf.Max(1f, thickness);
     public float EdgeOffset => edgeOffset;
     public float FadeSeconds => Mathf.Max(0f, fadeSeconds);
+    public bool FadeOnEdgeChange => fadeOnEdgeChange;
 
     public float EvaluateFade(float progress)
     {

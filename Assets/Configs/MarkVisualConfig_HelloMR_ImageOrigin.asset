@@ -58,6 +58,7 @@ MonoBehaviour:
   proximityPrefabs:
   - {fileID: 7865643288987669811, guid: 122dde21e47bb554399be3cf9bb401e0, type: 3}
   - {fileID: 3586553982834294555, guid: 6e941a9ecc5f5c64aa2bc3ea5447f9e2, type: 3}
+  - {fileID: 4378110893968593232, guid: ebabb7a645604f2380ef30813b67d9b7, type: 3}
   uncertaintyPrefabs: []
   uncertaintyColor: {r: 0.84, g: 0.16, b: 0.16, a: 0.18}
   showFalloffShells: 0

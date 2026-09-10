@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ac242bea5b3aed4eaee5e6545cc355a, type: 3}
   m_Name: b_05_edge_tick_config
   m_EditorClassIdentifier: 
-  length: 600
-  thickness: 14
-  edgeOffset: 0
+  length: 800
+  thickness: 40
+  edgeOffset: 10
   fadeSeconds: 0.2
   fadeCurve:
     serializedVersion: 2
@@ -40,3 +40,4 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  fadeOnEdgeChange: 1

@@ -191,7 +191,7 @@ public partial class BeamProControllerBridge
             {
                 requiredAction = "AIM AT THE SOURCE";
                 requiredInstruction =
-                    "Center the glasses on the Source until the gray preview appears.";
+                    "No surface detected; placing now uses the default distance.";
                 guideColor = new Color(1f, 0.86f, 0.38f, 1f);
             }
         }
@@ -264,9 +264,9 @@ public partial class BeamProControllerBridge
                 : roomPending
                     ? "Place Room"
                     : detectorPending
-                        ? "Release to Fix"
+                        ? "Place"
                         : roomCalibrated
-                            ? "Hold to Place"
+                            ? "Place"
                             : !connected
                                 ? "Connect & Scan"
                                 : "Scan Room QR",

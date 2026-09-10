@@ -406,9 +406,7 @@ public partial class DetectorWorldMarkerManager
                 return;
             }
 
-            // Keep the preview attached to the gaze center at the default distance
-            // instead of leaving it frozen at a stale pose while plane tracking
-            // catches up. PlaceDetector still refuses to commit without a plane hit.
+            // Committable on purpose: refusing to place at all is worse than a guessed depth.
             Vector3 fallbackDirection = placementOrigin.forward.sqrMagnitude > 0.0001f
                 ? placementOrigin.forward.normalized
                 : Vector3.forward;
@@ -426,6 +424,7 @@ public partial class DetectorWorldMarkerManager
 
             marker.savedPosition = fallbackPosition;
             marker.lastEstimatedDistance = defaultPlacementDistanceMeters;
+            marker.lastPlacementMethod = "GazeCenterFallbackDistance";
             return;
         }
 
@@ -460,13 +459,6 @@ public partial class DetectorWorldMarkerManager
         if (marker.isFollowingPlacementOrigin && !marker.isPlaced)
             UpdateFollowingMarkerPosition(marker);
 
-        if (usePlaneIntersectionPlacement && !marker.hasValidPlaneHit)
-        {
-            resultMessage =
-                $"Aim the glasses center at a detected surface for {marker.detectorId}";
-            return false;
-        }
-
         PlaceDetector(marker.detectorId);
         bool placed = marker.isPlaced && !marker.isFollowingPlacementOrigin;
         resultMessage = placed
@@ -498,12 +490,6 @@ public partial class DetectorWorldMarkerManager
 
         if (marker.isFollowingPlacementOrigin && !marker.isPlaced)
             UpdateFollowingMarkerPosition(marker);
-
-        if (usePlaneIntersectionPlacement && !marker.hasValidPlaneHit)
-        {
-            Debug.LogWarning($"[DetectorWorldMarkerManager] PlaceDetector blocked. The center gaze ray is not intersecting a detected plane: {detectorId}");
-            return;
-        }
 
         marker.isFollowingPlacementOrigin = false;
         marker.isPlaced = true;

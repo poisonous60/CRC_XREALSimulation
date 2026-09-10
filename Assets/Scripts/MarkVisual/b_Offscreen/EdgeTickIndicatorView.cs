@@ -19,6 +19,9 @@ public class EdgeTickIndicatorView : OffscreenIndicatorView
     private Color baseColor = Color.white;
     private float fadeProgress;
     private bool showing;
+    private OffscreenEdge pendingEdge;
+    private bool edgeChangePending;
+    private Vector2 heldAnchor;
 
     public EdgeTickConfig Config => config;
 
@@ -53,6 +56,7 @@ public class EdgeTickIndicatorView : OffscreenIndicatorView
     {
         fadeProgress = 0f;
         showing = false;
+        edgeChangePending = false;
     }
 
     public override void Show(string detectorId, OffscreenEdge edge, Color statusColor)
@@ -60,21 +64,40 @@ public class EdgeTickIndicatorView : OffscreenIndicatorView
         if (tick == null)
             return;
 
-        showing = true;
         baseColor = useStatusColor ? statusColor : configuredColor;
+
+        if (config != null)
+        {
+            tickRect.sizeDelta = new Vector2(config.Length, config.Thickness);
+
+            // The placer only overwrites the root anchor after this call, so the anchor read
+            // here is still the edge the tick has to fade out on.
+            if (!edgeChangePending && showing && edge != currentEdge &&
+                config.FadeOnEdgeChange && config.FadeSeconds > 0f)
+            {
+                heldAnchor = ((RectTransform)transform).anchorMin;
+                edgeChangePending = true;
+            }
+        }
+
+        if (edgeChangePending)
+        {
+            pendingEdge = edge;
+            showing = false;
+        }
+        else
+        {
+            ApplyEdge(edge);
+            showing = true;
+        }
+
         ApplyFadedColor();
-        currentEdge = edge;
-
-        if (config == null)
-            return;
-
-        tickRect.sizeDelta = new Vector2(config.Length, config.Thickness);
-        tickRect.localEulerAngles = new Vector3(0f, 0f, GetEdgeRotation(edge));
     }
 
     public override bool Hide()
     {
         showing = false;
+        edgeChangePending = false;
 
         return config == null || config.FadeSeconds <= 0f || fadeProgress <= 0f;
     }
@@ -86,18 +109,41 @@ public class EdgeTickIndicatorView : OffscreenIndicatorView
         if (tickRect == null || config == null)
             return;
 
+        if (edgeChangePending)
+        {
+            RectTransform root = (RectTransform)transform;
+            root.anchorMin = heldAnchor;
+            root.anchorMax = heldAnchor;
+            root.anchoredPosition = Vector2.zero;
+        }
+
         tickRect.anchoredPosition = GetOutwardDirection(currentEdge) * config.EdgeOffset;
 
         float target = showing ? 1f : 0f;
 
-        if (Mathf.Approximately(fadeProgress, target))
-            return;
+        if (!Mathf.Approximately(fadeProgress, target))
+        {
+            fadeProgress = config.FadeSeconds > 0f
+                ? Mathf.MoveTowards(fadeProgress, target, Time.deltaTime / config.FadeSeconds)
+                : target;
 
-        fadeProgress = config.FadeSeconds > 0f
-            ? Mathf.MoveTowards(fadeProgress, target, Time.deltaTime / config.FadeSeconds)
-            : target;
+            ApplyFadedColor();
+        }
 
-        ApplyFadedColor();
+        if (edgeChangePending && fadeProgress <= 0f)
+        {
+            ApplyEdge(pendingEdge);
+            edgeChangePending = false;
+            showing = true;
+        }
+    }
+
+    private void ApplyEdge(OffscreenEdge edge)
+    {
+        currentEdge = edge;
+
+        if (config != null)
+            tickRect.localEulerAngles = new Vector3(0f, 0f, GetEdgeRotation(edge));
     }
 
     private void ApplyFadedColor()
