@@ -8,7 +8,16 @@ public class SourceHoldPlaceButton : MonoBehaviour, IPointerDownHandler, IPointe
     [Tooltip("Optional. Auto-found on the controller prefab root when empty.")]
     [SerializeField] private BeamProControllerBridge controllerBridge;
 
+    [Header("Target")]
+    [Tooltip("Detector ID this button places. Empty places the Source Marker through the scan-or-place flow.")]
+    [SerializeField] private string detectorId = "";
+
     private bool isHeld;
+
+    public void SetDetectorId(string id)
+    {
+        detectorId = id;
+    }
 
     public void OnPointerDown(PointerEventData eventData)
     {
@@ -20,7 +29,10 @@ public class SourceHoldPlaceButton : MonoBehaviour, IPointerDownHandler, IPointe
         if (controllerBridge.HasPendingPlacement)
             return;
 
-        controllerBridge.StartQrScan();
+        if (string.IsNullOrEmpty(detectorId))
+            controllerBridge.StartQrScan();
+        else
+            controllerBridge.StartDetectorPlacement(detectorId);
     }
 
     public void OnPointerUp(PointerEventData eventData)

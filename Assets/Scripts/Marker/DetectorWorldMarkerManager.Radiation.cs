@@ -36,8 +36,12 @@ public partial class DetectorWorldMarkerManager
 
         float maximumValue = radiationSnapshot.Ingest(data);
 
+        if (usePerDetectorRadiationValues)
+        {
+            ApplyPerDetectorRadiationValues(data);
+        }
         // Temporary: every sphere shows the maximum of all live sensors until the aggregation rule is decided.
-        if (maximumValue >= 0f)
+        else if (maximumValue >= 0f)
         {
             foreach (KeyValuePair<string, SourceMarker> pair in markers)
             {
@@ -55,9 +59,36 @@ public partial class DetectorWorldMarkerManager
             ApplyMarkerVisibility(pair.Value);
     }
 
+    // The Source Marker is not a reporting detector here; the scene's rule component owns its value.
+    private void ApplyPerDetectorRadiationValues(IReadOnlyDictionary<string, float> data)
+    {
+        foreach (KeyValuePair<string, SourceMarker> pair in markers)
+        {
+            if (DetectorIdsEqual(pair.Key, sourceMarkerKey))
+                continue;
+
+            float value = data.TryGetValue(pair.Key, out float reported) ? reported : -1f;
+
+            UpdateMarkerVisual(pair.Value, value);
+            if (useCoordinateDatabase && coordinateDatabase != null)
+                coordinateDatabase.UpdateRadiationValue(pair.Key, value);
+        }
+    }
+
     private float GetLatestRadiationValue(string detectorId, float fallbackValue)
     {
-        return IsRadiationSnapshotFresh() && radiationSnapshot.LatestAggregateValue >= 0f
+        if (!IsRadiationSnapshotFresh())
+            return fallbackValue;
+
+        if (usePerDetectorRadiationValues)
+        {
+            return radiationReceiver != null &&
+                   radiationReceiver.LatestDeviceData.TryGetValue(detectorId, out float reported)
+                ? reported
+                : fallbackValue;
+        }
+
+        return radiationSnapshot.LatestAggregateValue >= 0f
             ? radiationSnapshot.LatestAggregateValue
             : fallbackValue;
     }

@@ -39,6 +39,12 @@ public class MarkVisualConfig : ScriptableObject
     [Tooltip("Same multiplier on the 1 m the Placement Prefab is authored at. Independent of Marker Size Meters, so the aiming look can be larger or smaller than the placed marker.")]
     [SerializeField, Min(MinimumMarkerSizeMeters)] private float placementSizeMeters = 0.2f;
 
+    [Tooltip("Seconds the (a) marker takes to fade in from nothing when it appears. 0 shows it at full opacity at once.")]
+    [SerializeField, Min(0f)] private float appearFadeSeconds = 0f;
+
+    [Tooltip("Shape of that fade-in. X is elapsed fade progress 0 to 1, Y is the share of full opacity shown. Straight line fades evenly.")]
+    [SerializeField] private AnimationCurve appearFadeCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
+
     [Header("Status Color by CPS")]
     [Tooltip("Bands from low to high CPS. Press + to add one. A reading past the last band keeps that band's color.")]
     [SerializeField] private List<StatusColorBand> statusBands = new List<StatusColorBand>();
@@ -82,6 +88,10 @@ public class MarkVisualConfig : ScriptableObject
     [Tooltip("Footprint color. Alpha decides how much of the surface stays readable through it.")]
     [SerializeField] private Color uncertaintyColor = new Color(0.84f, 0.16f, 0.16f, 0.18f);
 
+    [Header("(e) Detector")]
+    [Tooltip("Replaces the whole marker object for every marker that is not the Source. Empty draws those markers with the (a) Marker Prefab, as before.")]
+    [SerializeField] private GameObject detectorPrefab;
+
     [Header("Code-drawn Extras")]
     [Tooltip("Faint inverse-square shells around the marker. Drawn in code, so no prefab changes their look.")]
     [SerializeField] private bool showFalloffShells = true;
@@ -109,6 +119,7 @@ public class MarkVisualConfig : ScriptableObject
     public bool HideLowCps => hideLowCps;
     public Color LowCpsColor => lowCpsColor;
     public float StatusColorFadeSeconds => Mathf.Max(0f, statusColorFadeSeconds);
+    public float AppearFadeSeconds => Mathf.Max(0f, appearFadeSeconds);
     public OffscreenIndicatorView OffscreenPrefab => offscreenPrefab;
     public float OffscreenEdgeInset => offscreenEdgeInset;
     public bool OffscreenUseStatusColor => offscreenUseStatusColor;
@@ -116,6 +127,7 @@ public class MarkVisualConfig : ScriptableObject
     public IReadOnlyList<SourcePresentation> ProximityPrefabs => proximityPrefabs;
     public IReadOnlyList<UncertaintyPresentation> UncertaintyPrefabs => uncertaintyPrefabs;
     public Color UncertaintyColor => uncertaintyColor;
+    public GameObject DetectorPrefab => detectorPrefab;
 
     public bool HasProximityPrefab()
     {
@@ -171,6 +183,16 @@ public class MarkVisualConfig : ScriptableObject
             return clamped;
 
         return Mathf.Clamp01(statusColorFadeCurve.Evaluate(clamped));
+    }
+
+    public float EvaluateAppearFade(float progress)
+    {
+        float clamped = Mathf.Clamp01(progress);
+
+        if (appearFadeCurve == null || appearFadeCurve.length == 0)
+            return clamped;
+
+        return Mathf.Clamp01(appearFadeCurve.Evaluate(clamped));
     }
 
     public bool TryGetStatusColor(float countsPerSecond, out Color color)

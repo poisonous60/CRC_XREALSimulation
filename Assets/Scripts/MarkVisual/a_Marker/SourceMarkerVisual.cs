@@ -15,6 +15,8 @@ public class SourceMarkerVisual : MonoBehaviour
     private Color fadeFromColor = Color.clear;
     private Color targetColor = Color.clear;
     private float colorFadeProgress = 1f;
+    private float appearFadeProgress = 1f;
+    private bool wasCenterDrawn;
     private bool hasDisplayedColor;
 
     public void Initialize(SourceMarker owner, MarkerVisualSettings visualSettings)
@@ -116,8 +118,15 @@ public class SourceMarkerVisual : MonoBehaviour
     // Refresh runs on readings and drags, not every frame, so the crossfade needs its own tick.
     private void LateUpdate()
     {
+        bool appearFadeMoved = TickAppearFade();
+
         if (colorFadeProgress >= 1f)
+        {
+            if (appearFadeMoved && hasDisplayedColor)
+                ApplyColor(displayedColor);
+
             return;
+        }
 
         float fadeSeconds = GetColorFadeSeconds();
 
@@ -156,8 +165,51 @@ public class SourceMarkerVisual : MonoBehaviour
 
         displayedColor = color;
         hasDisplayedColor = true;
+
+        // The stored color stays at full opacity so a band change mid fade-in keeps
+        // crossfading between the two real colors.
+        Color drawnColor = color;
+        drawnColor.a *= EvaluateAppearFade(appearFadeProgress);
+
         marker.centerMaterial =
-            MarkerMaterials.SetRendererTransparentColor(marker.renderer, color, 10, false, settings);
+            MarkerMaterials.SetRendererTransparentColor(marker.renderer, drawnColor, 10, false, settings);
+    }
+
+    // The visibility policy switches the renderer on the frame the marker appears, so the
+    // fade-in starts from that edge instead of from a call the manager would have to make.
+    private bool TickAppearFade()
+    {
+        bool centerDrawn = marker != null && marker.renderer != null && marker.renderer.enabled;
+
+        if (centerDrawn != wasCenterDrawn)
+        {
+            wasCenterDrawn = centerDrawn;
+            appearFadeProgress = centerDrawn && GetAppearFadeSeconds() > 0f ? 0f : 1f;
+            return true;
+        }
+
+        if (appearFadeProgress >= 1f)
+            return false;
+
+        float fadeSeconds = GetAppearFadeSeconds();
+
+        appearFadeProgress = fadeSeconds > 0f
+            ? Mathf.MoveTowards(appearFadeProgress, 1f, Time.deltaTime / fadeSeconds)
+            : 1f;
+
+        return true;
+    }
+
+    private static float GetAppearFadeSeconds()
+    {
+        return MarkVisualConfig.TryLoad(out MarkVisualConfig config) ? config.AppearFadeSeconds : 0f;
+    }
+
+    private static float EvaluateAppearFade(float progress)
+    {
+        return MarkVisualConfig.TryLoad(out MarkVisualConfig config)
+            ? config.EvaluateAppearFade(progress)
+            : Mathf.Clamp01(progress);
     }
 
     private static float GetColorFadeSeconds()

@@ -46,6 +46,8 @@ public partial class BeamProControllerBridge
             presentation.actionLabel,
             presentation.actionEnabled);
 
+        UpdateDetectorButtons();
+
         workflowUiDirty = false;
     }
 

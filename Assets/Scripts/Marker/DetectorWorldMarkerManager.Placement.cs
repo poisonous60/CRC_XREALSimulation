@@ -11,6 +11,11 @@ public partial class DetectorWorldMarkerManager
 
     private void HandleQrDetected(string qrText, Vector2 imageCenter, int imageWidth, int imageHeight, float qrPixelSize)
     {
+        // The printed ROOM_ORIGIN sheet is read by the QR scanner as well as the image
+        // tracker, and a sighting of it here cancels the placement the operator is aiming.
+        if (HasActivePlacement || HasActiveDetectorMove)
+            return;
+
         AbortControllerDetectorInteraction(true);
 
         // ROOM_ORIGIN is a coordinate-frame command, not a radiation detector ID.
@@ -36,40 +41,54 @@ public partial class DetectorWorldMarkerManager
             return;
         }
 
-        BeginSourcePlacement(imageCenter, imageWidth, imageHeight, qrPixelSize);
+        BeginSourcePlacement(sourceMarkerKey, imageCenter, imageWidth, imageHeight, qrPixelSize);
     }
 
     public bool TryBeginSourcePlacement(out string resultMessage)
+    {
+        return TryBeginSourcePlacement(sourceMarkerKey, out resultMessage);
+    }
+
+    public bool TryBeginSourcePlacement(string detectorId, out string resultMessage)
     {
         AbortControllerDetectorInteraction(true);
 
         if (roomCoordinateSystem != null)
             roomCoordinateSystem.CancelPendingPlacementForDetectorScan();
 
+        string placementName = DetectorIdsEqual(detectorId, sourceMarkerKey)
+            ? "the Source"
+            : NormalizeDetectorId(detectorId);
+
         if (!IsRoomReadyForPlacement())
         {
-            resultMessage = "Place ROOM_ORIGIN before adding the Source";
+            resultMessage = $"Place ROOM_ORIGIN before adding {placementName}";
             return false;
         }
 
-        if (string.IsNullOrEmpty(NormalizeDetectorId(sourceMarkerKey)))
+        if (string.IsNullOrEmpty(NormalizeDetectorId(detectorId)))
         {
             resultMessage = "Source Marker key is empty";
             return false;
         }
 
-        bool started = BeginSourcePlacement(Vector2.zero, 0, 0, 0f);
+        bool started = BeginSourcePlacement(detectorId, Vector2.zero, 0, 0, 0f);
         resultMessage = !started
-            ? "Source placement did not start"
+            ? $"Placement of {placementName} did not start"
             : followPreviewCenterUntilPlaced
-                ? "Aim the glasses at the Source, then release"
-                : "Source placed ahead of the glasses";
+                ? $"Aim the glasses at {placementName}, then release"
+                : $"{placementName} placed ahead of the glasses";
         return started;
     }
 
-    private bool BeginSourcePlacement(Vector2 imageCenter, int imageWidth, int imageHeight, float qrPixelSize)
+    private bool BeginSourcePlacement(
+        string requestedDetectorId,
+        Vector2 imageCenter,
+        int imageWidth,
+        int imageHeight,
+        float qrPixelSize)
     {
-        string detectorId = NormalizeDetectorId(sourceMarkerKey);
+        string detectorId = NormalizeDetectorId(requestedDetectorId);
         if (string.IsNullOrEmpty(detectorId))
             return false;
 
@@ -461,9 +480,12 @@ public partial class DetectorWorldMarkerManager
 
         PlaceDetector(marker.detectorId);
         bool placed = marker.isPlaced && !marker.isFollowingPlacementOrigin;
+        string placementName = DetectorIdsEqual(marker.detectorId, sourceMarkerKey)
+            ? "Source"
+            : marker.detectorId;
         resultMessage = placed
-            ? "Source placed"
-            : "Source could not be placed";
+            ? $"{placementName} placed"
+            : $"{placementName} could not be placed";
         return placed;
     }
 

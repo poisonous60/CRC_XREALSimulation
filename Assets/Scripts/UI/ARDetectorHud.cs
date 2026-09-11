@@ -29,7 +29,11 @@ public partial class ARDetectorHud : MonoBehaviour
     [SerializeField] private Vector2 hudViewportAnchor = new Vector2(0.94f, 0.06f);
 
     [SerializeField] private Vector2 hudPixelSize = new Vector2(720f, 430f);
+
+    [Tooltip("Height of one HUD line on the glasses display, in pixels. The HUD is head-locked, so this size does not change with distance.")]
+    [RuntimeTunable(14f, 60f, "HUD size (px)")]
     [SerializeField, Min(10f)] private float hudFontSize = 27f;
+
     [SerializeField] private string radiationUnit = "CPS";
 
     [Tooltip("Maximum detector rows kept inside the fixed XREAL HUD. Extra rows are summarized.")]

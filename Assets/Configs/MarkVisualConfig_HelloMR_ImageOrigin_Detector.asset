@@ -1,0 +1,95 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfd3f835e48bd1748a20c259102e8a4e, type: 3}
+  m_Name: MarkVisualConfig_HelloMR_ImageOrigin_Detector
+  m_EditorClassIdentifier: 
+  markerPrefab: {fileID: 937448006854704604, guid: aea92c1873858e441ae6470b9ed74d84, type: 3}
+  markerSizeMeters: 1.5
+  placementPrefab: {fileID: 6387016307566893731, guid: f6d69e8b4d22668459be4f0909556c34, type: 3}
+  placementSizeMeters: 0.03
+  appearFadeSeconds: 0.2
+  appearFadeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  statusBands:
+  - maxCps: 10
+    color: {r: 0, g: 1, b: 0, a: 1}
+  - maxCps: 20
+    color: {r: 1, g: 1, b: 0, a: 1}
+  - maxCps: 1000
+    color: {r: 1, g: 0, b: 0, a: 1}
+  unknownColor: {r: 0.65, g: 0.65, b: 0.65, a: 1}
+  hideLowCps: 0
+  lowCpsColor: {r: 0.65, g: 0.65, b: 0.65, a: 1}
+  statusColorFadeSeconds: 0.2
+  statusColorFadeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  offscreenPrefab: {fileID: 6002855538228716833, guid: da70caf432a00364586c24ff937e03a5, type: 3}
+  offscreenEdgeInset: 1
+  offscreenUseStatusColor: 1
+  offscreenColor: {r: 1, g: 1, b: 1, a: 1}
+  proximityPrefabs:
+  - {fileID: 7865643288987669811, guid: 122dde21e47bb554399be3cf9bb401e0, type: 3}
+  - {fileID: 3586553982834294555, guid: 6e941a9ecc5f5c64aa2bc3ea5447f9e2, type: 3}
+  - {fileID: 4378110893968593232, guid: ebabb7a645604f2380ef30813b67d9b7, type: 3}
+  uncertaintyPrefabs: []
+  uncertaintyColor: {r: 0.84, g: 0.16, b: 0.16, a: 0.18}
+  detectorPrefab: {fileID: 5742530184883840491, guid: ad4e935f5876f6d439671e5e0ad89fe1, type: 3}
+  showFalloffShells: 0
+  falloffReferenceDistanceMeters: 0.08
+  falloffMaxRadiusMeters: 5
+  falloffShellAlpha: 0.012
+  maxFalloffShells: 3
+  showLabel: 0

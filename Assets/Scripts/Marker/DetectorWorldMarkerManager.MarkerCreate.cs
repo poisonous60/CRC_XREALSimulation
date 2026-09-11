@@ -100,10 +100,15 @@ public partial class DetectorWorldMarkerManager
 
         MarkVisualConfig.TryLoad(out MarkVisualConfig visualSetting);
 
+        bool usesDetectorLook =
+            visualSetting != null &&
+            visualSetting.DetectorPrefab != null &&
+            !DetectorIdsEqual(detectorId, sourceMarkerKey);
+
         GameObject prefab = markerPrefab;
 
         if (prefab == null && visualSetting != null)
-            prefab = visualSetting.MarkerPrefab;
+            prefab = usesDetectorLook ? visualSetting.DetectorPrefab : visualSetting.MarkerPrefab;
 
         GameObject root = prefab != null
             ? Instantiate(prefab, worldPosition, Quaternion.identity, markerParent)
@@ -111,7 +116,7 @@ public partial class DetectorWorldMarkerManager
 
         root.name = $"DetectorMarker_{detectorId}";
 
-        if (visualSetting != null && visualSetting.HasProximityPrefab())
+        if (visualSetting != null && visualSetting.HasProximityPrefab() && !usesDetectorLook)
             root.AddComponent<SourcePresentationHost>();
 
         root.transform.position = worldPosition;

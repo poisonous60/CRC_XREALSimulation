@@ -28,6 +28,16 @@ public partial class DetectorWorldMarkerManager
             if (marker == null || marker.root == null || !marker.isPlaced)
                 continue;
 
+            // The computed source disc is a live readout, not a placed marker. Saving it
+            // would restore a source at last session's winner before any reading arrives.
+            if (string.Equals(
+                    marker.lastPlacementMethod,
+                    ComputedPlacementMethod,
+                    StringComparison.Ordinal))
+            {
+                continue;
+            }
+
             // Never reinterpret a detector already assigned to a room. A room
             // re-scan refines the frame, not the detector's stored local pose.
             if (coordinateDatabase.TryGetRecord(

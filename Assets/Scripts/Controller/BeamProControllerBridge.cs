@@ -50,18 +50,13 @@ public partial class BeamProControllerBridge : MonoBehaviour
 
     [SerializeField] private TMP_Text controllerSourceActionButtonText;
 
-    [Header("Detector List Layout")]
+    [Header("Detector List Text")]
     [SerializeField, Min(6f)] private float detectorListMinFontSize = 10f;
     [SerializeField, Min(10f)] private float detectorListMaxFontSize = 40f;
-    [SerializeField, Min(0f)] private float detectorListHorizontalPadding = 20f;
-    [SerializeField, Min(128f)] private float detectorListHeight = 320f;
-    [SerializeField] private float detectorListCenterYOffset = 330f;
 
-    [Header("Workflow Guide Layout")]
+    [Header("Workflow Guide Text")]
     [SerializeField, Min(8f)] private float workflowGuideMinFontSize = 24f;
     [SerializeField, Min(12f)] private float workflowGuideMaxFontSize = 44f;
-    [SerializeField, Min(128f)] private float workflowGuideHeight = 220f;
-    [SerializeField] private float workflowGuideCenterYOffset = 330f;
     [SerializeField, Min(6f)] private float workflowButtonMinFontSize = 10f;
     [SerializeField, Min(10f)] private float workflowButtonMaxFontSize = 20f;
 
@@ -112,6 +107,9 @@ public partial class BeamProControllerBridge : MonoBehaviour
             radiationReceiver != null &&
             radiationReceiver.IsConnected &&
             radiationReceiver.HasFreshRadiationData;
+        ConfigureControllerDetectorList();
+        ConfigureControllerWorkflowGuide();
+        ConfigureWorkflowButtonLabels();
         workflowUiDirty = true;
         nextWorkflowRefreshTime = 0f;
         nextReferenceResolveTime = 0f;
@@ -126,15 +124,6 @@ public partial class BeamProControllerBridge : MonoBehaviour
             nextReferenceResolveTime = now + 1f;
             ResolveReferences();
             ResolveControllerControls();
-        }
-
-        if (lastConfiguredScreenWidth != Screen.width ||
-            lastConfiguredScreenHeight != Screen.height ||
-            lastConfiguredSafeArea != Screen.safeArea)
-        {
-            ConfigureControllerDetectorList();
-            ConfigureControllerWorkflowGuide();
-            ConfigureWorkflowButtonLabels();
         }
 
         if (workflowUiDirty || now >= nextWorkflowRefreshTime)

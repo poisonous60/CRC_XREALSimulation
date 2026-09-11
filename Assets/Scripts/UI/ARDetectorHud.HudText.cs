@@ -131,6 +131,7 @@ public partial class ARDetectorHud
             }
         }
 
+        hudText.fontSize = hudFontSize;
         hudText.text = textBuilder.ToString();
     }
 

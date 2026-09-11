@@ -27,6 +27,9 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
     [Tooltip("Key of the one Source Marker. A sticker scan or Add Source starts a Placement of this marker; the sticker text is never used as a key.")]
     [SerializeField] private string sourceMarkerKey = "SOURCE";
 
+    [Tooltip("ON = every marker shows its own Detector ID's reading, and the Source Marker's value is left to the scene's rule component. OFF = every marker shows the highest reading in the snapshot.")]
+    [SerializeField] private bool usePerDetectorRadiationValues = false;
+
     [Header("Plane Intersection Placement")]
     [Tooltip("ON = place the preview at the intersection between the glasses' center gaze ray and a detected AR plane.")]
     [SerializeField] private bool usePlaneIntersectionPlacement = true;
@@ -53,6 +56,9 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
     [SerializeField] private bool useCoordinateDatabase = true;
     [SerializeField] private DetectorCoordinateDatabase coordinateDatabase;
     [SerializeField] private bool loadSavedCoordinatesOnStart = true;
+
+    [Tooltip("ON = saved records keyed by anything other than the Source Marker key are deleted at startup. Turn it off in a scene that keeps one saved marker per Detector ID.")]
+    [SerializeField] private bool removeRecordsOutsideSourceKey = true;
 
     [Tooltip("Create a ROOM_ORIGIN QR reference frame for stable detector coordinates across Unity sessions.")]
     [SerializeField] private bool enableRoomCoordinateSystem = true;
@@ -156,6 +162,11 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
 
     [Tooltip("Optional existing HUD. When empty, one is created automatically at runtime.")]
     [SerializeField] private ARDetectorHud arGlassesHud;
+
+    [Tooltip("ON = only the Source Marker gets an off-screen cue. The HUD reading rows are unaffected.")]
+    [SerializeField] private bool offscreenCueForSourceOnly = false;
+
+    public bool OffscreenCueForSourceOnly => offscreenCueForSourceOnly;
 
     [Header("Marker Label")]
     [SerializeField] private bool showLabel = false;

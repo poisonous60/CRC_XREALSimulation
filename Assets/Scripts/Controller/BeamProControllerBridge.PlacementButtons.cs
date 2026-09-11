@@ -25,6 +25,37 @@ public partial class BeamProControllerBridge
         CancelPlace();
     }
 
+    public void StartDetectorPlacement(string detectorId)
+    {
+        ResolveReferences();
+
+        if (markerManager == null)
+        {
+            Warn("DetectorWorldMarkerManager not found. Cannot start a placement.");
+            return;
+        }
+
+        if (markerManager.HasActivePlacement ||
+            (roomCoordinateSystem != null && roomCoordinateSystem.HasPendingPlacement))
+        {
+            Warn("Place or cancel the current preview first");
+            return;
+        }
+
+        ConnectIfNeeded();
+
+        if (markerManager.TryBeginSourcePlacement(detectorId, out string resultMessage))
+        {
+            ShowControllerActionStatus(resultMessage, Color.white);
+            Log(resultMessage);
+        }
+        else
+        {
+            ShowControllerActionStatus(resultMessage, Color.yellow);
+            Warn(resultMessage);
+        }
+    }
+
     public void PlaceDetector()
     {
         ResolveReferences();

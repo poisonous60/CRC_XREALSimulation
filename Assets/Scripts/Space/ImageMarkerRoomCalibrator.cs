@@ -23,6 +23,9 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
     [Tooltip("Optional. The first RoomCoordinateSystem in the scene is used when empty.")]
     [SerializeField] private RoomCoordinateSystem roomCoordinateSystem;
 
+    [Tooltip("Optional. The first DetectorWorldMarkerManager in the scene is used when empty. It is asked whether a placement is running.")]
+    [SerializeField] private DetectorWorldMarkerManager markerManager;
+
     [Header("Marker")]
     [Tooltip("Reference image name in the library. Also used as the room id, so records saved by the wall-QR flow stay compatible.")]
     [SerializeField] private string markerName = "ROOM_ORIGIN";
@@ -80,8 +83,15 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
         if (roomCoordinateSystem.IsCalibrated)
         {
             guideShown = false;
+
+            // Disabling the manager stops the image subsystem itself, so no sighting reaches
+            // any listener while the operator is aiming a detector. Only once the origin
+            // stands, or the marker could never place it.
+            SetImageTrackingEnabled(!IsPlacementRunning());
             return;
         }
+
+        SetImageTrackingEnabled(true);
 
         if (guideShown)
             return;
@@ -131,6 +141,21 @@ public sealed class ImageMarkerRoomCalibrator : MonoBehaviour
     {
         committedPose = worldPose;
         nextRealignTime = Time.time + realignIntervalSeconds;
+    }
+
+    private void SetImageTrackingEnabled(bool value)
+    {
+        if (trackedImageManager != null && trackedImageManager.enabled != value)
+            trackedImageManager.enabled = value;
+    }
+
+    private bool IsPlacementRunning()
+    {
+        if (markerManager == null)
+            markerManager = FindFirstObjectByType<DetectorWorldMarkerManager>();
+
+        return markerManager != null &&
+               (markerManager.HasActivePlacement || markerManager.HasActiveDetectorMove);
     }
 
     private bool TryResolveRoomCoordinateSystem()

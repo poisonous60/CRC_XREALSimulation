@@ -9,13 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fffbc6737034dec4d90e18e131bb1cc5, type: 3}
-  m_Name: c_01_distance_text_config
+  m_Script: {fileID: 11500000, guid: ba82ac9be63d05b419caf6361ccc87ab, type: 3}
+  m_Name: e_01_cps_label_config
   m_EditorClassIdentifier: 
-  textSizePixels: 60
-  constantScreenSize: 1
+  textSizePixels: 50
   referenceDistanceMeters: 2
+  approachGrowth: 0.55
+  verticalOffsetMeters: 0.05
   textColor: {r: 1, g: 1, b: 1, a: 1}
-  outlineWidth: 0.2
+  outlineWidth: 0.25
   outlineColor: {r: 0, g: 0, b: 0, a: 1}
-  maximumVisibleDistanceMeters: 0

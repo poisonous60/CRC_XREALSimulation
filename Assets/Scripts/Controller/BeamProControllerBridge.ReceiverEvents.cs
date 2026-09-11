@@ -48,10 +48,11 @@ public partial class BeamProControllerBridge
         workflowUiDirty = true;
     }
 
-    private void HandleRadiationDataReceived(Dictionary<string, float> _)
+    private void HandleRadiationDataReceived(Dictionary<string, float> deviceData)
     {
         receivedRadiationThisConnection = true;
         workflowUiDirty = true;
+        TrackDetectorIds(deviceData);
     }
 
     private void SyncCurrentReceiverText()
@@ -61,6 +62,8 @@ public partial class BeamProControllerBridge
             HandleDisplayTextChanged(WaitingForDataMessage);
             return;
         }
+
+        TrackDetectorIds(radiationReceiver.LatestDeviceData);
 
         HandleServerStatusChanged(
             radiationReceiver.CurrentStatusMessage,

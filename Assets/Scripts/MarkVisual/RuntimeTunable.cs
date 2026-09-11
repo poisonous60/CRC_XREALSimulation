@@ -19,18 +19,18 @@ public sealed class RuntimeTunableAttribute : Attribute
     public string Label { get; }
 }
 
-/// <summary>One tunable field of one config asset, read and written through reflection.</summary>
+/// <summary>One tunable field of one config asset or scene component, read and written through reflection.</summary>
 public sealed class RuntimeTunableField
 {
     private const string SaveKeyPrefix = "RadVis.Tunable.";
 
-    private readonly ScriptableObject owner;
+    private readonly UnityEngine.Object owner;
     private readonly FieldInfo field;
     private readonly RuntimeTunableAttribute attribute;
     private readonly string category;
 
     public RuntimeTunableField(
-        ScriptableObject owningAsset,
+        UnityEngine.Object owningAsset,
         FieldInfo tunableField,
         RuntimeTunableAttribute tunableAttribute,
         string owningCategory)
@@ -66,6 +66,8 @@ public static class RuntimeTunable
     private const string OffscreenCategory = "(b) Off-screen Cue";
     private const string ProximityCategory = "(c) Proximity Information";
     private const string UncertaintyCategory = "(d) Uncertainty Footprint";
+    private const string DetectorCategory = "(e) Detector";
+    private const string SceneCategory = "Scene";
 
     public static void Collect(MarkVisualConfig config, List<RuntimeTunableField> results)
     {
@@ -94,14 +96,18 @@ public static class RuntimeTunable
         }
 
         IReadOnlyList<UncertaintyPresentation> uncertainty = config.UncertaintyPrefabs;
-        if (uncertainty == null)
-            return;
 
-        for (int index = 0; index < uncertainty.Count; index++)
+        if (uncertainty != null)
         {
-            UncertaintyPresentation entry = uncertainty[index];
-            CollectPrefab(entry != null ? entry.gameObject : null, visited, results, UncertaintyCategory);
+            for (int index = 0; index < uncertainty.Count; index++)
+            {
+                UncertaintyPresentation entry = uncertainty[index];
+                CollectPrefab(entry != null ? entry.gameObject : null, visited, results, UncertaintyCategory);
+            }
         }
+
+        CollectPrefab(config.DetectorPrefab, visited, results, DetectorCategory);
+        CollectSceneComponents(results, SceneCategory);
     }
 
     public static void Save(RuntimeTunableField tunable)
@@ -177,7 +183,29 @@ public static class RuntimeTunable
         if (asset == null || !visited.Add(asset))
             return;
 
-        FieldInfo[] fields = asset.GetType().GetFields(FieldFlags);
+        CollectFields(asset, results, category);
+    }
+
+    // Scene text is drawn by components, not by a look config, so the sweep reaches the
+    // HUD and anything else that marks a field without wiring a reference to this screen.
+    private static void CollectSceneComponents(List<RuntimeTunableField> results, string category)
+    {
+        MonoBehaviour[] components =
+            UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
+
+        for (int index = 0; index < components.Length; index++)
+            CollectFields(components[index], results, category);
+    }
+
+    private static void CollectFields(
+        UnityEngine.Object owner,
+        List<RuntimeTunableField> results,
+        string category)
+    {
+        if (owner == null)
+            return;
+
+        FieldInfo[] fields = owner.GetType().GetFields(FieldFlags);
 
         for (int index = 0; index < fields.Length; index++)
         {
@@ -190,7 +218,7 @@ public static class RuntimeTunable
                 field.GetCustomAttribute<RuntimeTunableAttribute>();
 
             if (attribute != null)
-                results.Add(new RuntimeTunableField(asset, field, attribute, category));
+                results.Add(new RuntimeTunableField(owner, field, attribute, category));
         }
     }
 }

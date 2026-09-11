@@ -60,6 +60,9 @@ public partial class DetectorWorldMarkerManager
 
     private void RemoveRecordsOutsideSourceKey()
     {
+        if (!removeRecordsOutsideSourceKey)
+            return;
+
         CoordinateStore.RemoveRecordsOutsideSourceKey(sourceMarkerKey);
     }
 
