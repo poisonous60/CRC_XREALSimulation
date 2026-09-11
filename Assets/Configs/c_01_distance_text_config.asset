@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fffbc6737034dec4d90e18e131bb1cc5, type: 3}
   m_Name: c_01_distance_text_config
   m_EditorClassIdentifier: 
-  textSizePixels: 60
+  textSizePixels: 80
   constantScreenSize: 1
   referenceDistanceMeters: 2
   textColor: {r: 1, g: 1, b: 1, a: 1}

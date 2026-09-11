@@ -11,11 +11,19 @@ public class SourceMarkerVisual : MonoBehaviour
     private MarkerVisualSettings settings;
     private FalloffShellVisual shells;
     private MarkerAlphaOverride alphaOverride;
+    private const float MoveFadeMinMeters = 0.05f;
+
     private Color displayedColor = Color.clear;
     private Color fadeFromColor = Color.clear;
     private Color targetColor = Color.clear;
     private float colorFadeProgress = 1f;
     private float appearFadeProgress = 1f;
+    private Renderer ghostRenderer;
+    private Material ghostMaterial;
+    private Color ghostColor = Color.clear;
+    private MaterialPropertyBlock ghostPropertyBlock;
+    private float ghostProgress;
+    private int ghostFrame;
     private bool wasCenterDrawn;
     private bool hasDisplayedColor;
 
@@ -119,6 +127,7 @@ public class SourceMarkerVisual : MonoBehaviour
     private void LateUpdate()
     {
         bool appearFadeMoved = TickAppearFade();
+        UpdateGhost();
 
         if (colorFadeProgress >= 1f)
         {
@@ -175,8 +184,6 @@ public class SourceMarkerVisual : MonoBehaviour
             MarkerMaterials.SetRendererTransparentColor(marker.renderer, drawnColor, 10, false, settings);
     }
 
-    // Mirrors OffscreenIndicatorView.Hide: false while the fade-out still needs frames, so
-    // MarkerVisibilityPolicy leaves the center renderer on until this reports it is done.
     public bool Hide()
     {
         return marker == null ||
@@ -186,10 +193,134 @@ public class SourceMarkerVisual : MonoBehaviour
                appearFadeProgress <= 0f;
     }
 
+    // Everything outside the look reads the root, so the root moves at once and a copy of the
+    // visual child is left behind to fade out on the spot the marker is leaving.
+    public void MoveTo(Vector3 worldPosition)
+    {
+        bool fadeMove = CanFadeMove(worldPosition);
+
+        // A second move in the same frame must not trade the ghost for a copy taken from a
+        // position that was never on screen.
+        if (fadeMove && (ghostRenderer == null || ghostFrame != Time.frameCount))
+        {
+            DestroyGhost();
+            SpawnGhost();
+        }
+
+        transform.position = worldPosition;
+
+        if (fadeMove)
+            appearFadeProgress = 0f;
+    }
+
+    private void SpawnGhost()
+    {
+        GameObject copy = Instantiate(marker.renderer.gameObject, transform);
+        copy.name = $"MoveGhost_{marker.detectorId}";
+        copy.transform.SetParent(transform.parent, true);
+
+        ghostRenderer = copy.GetComponent<Renderer>();
+
+        if (ghostRenderer == null)
+        {
+            Destroy(copy);
+            return;
+        }
+
+        // The ghost is a still picture of what was drawn, so it keeps only what draws it.
+        // Colliders would answer the controller ray on a spot the marker already left, and a
+        // look script would keep running on a copy that no longer belongs to any marker.
+        // FaceCamera survives because a billboard that stopped turning reads as a skewed card.
+        Collider[] colliders = copy.GetComponentsInChildren<Collider>(true);
+
+        for (int i = 0; i < colliders.Length; i++)
+            Destroy(colliders[i]);
+
+        MonoBehaviour[] behaviours = copy.GetComponentsInChildren<MonoBehaviour>(true);
+
+        for (int i = 0; i < behaviours.Length; i++)
+        {
+            if (!(behaviours[i] is FaceCamera))
+                Destroy(behaviours[i]);
+        }
+
+        // Instantiate does not carry the property block, so a look that drives its shader
+        // through one would draw the ghost with default values instead of what was on screen.
+        if (ghostPropertyBlock == null)
+            ghostPropertyBlock = new MaterialPropertyBlock();
+
+        marker.renderer.GetPropertyBlock(ghostPropertyBlock);
+        ghostRenderer.SetPropertyBlock(ghostPropertyBlock);
+
+        ghostMaterial = ghostRenderer.material;
+        ghostColor = displayedColor;
+        ghostColor.a *= EvaluateAppearFade(appearFadeProgress);
+        ghostProgress = 1f;
+        ghostFrame = Time.frameCount;
+    }
+
+    private void UpdateGhost()
+    {
+        if (ghostRenderer == null)
+            return;
+
+        float fadeSeconds = GetAppearFadeSeconds();
+
+        ghostProgress = fadeSeconds > 0f
+            ? Mathf.MoveTowards(ghostProgress, 0f, Time.deltaTime / fadeSeconds)
+            : 0f;
+
+        if (ghostProgress <= 0f)
+        {
+            DestroyGhost();
+            return;
+        }
+
+        Color color = ghostColor;
+        color.a *= EvaluateAppearFade(ghostProgress);
+        MarkerMaterials.SetRendererTransparentColor(ghostRenderer, color, 10, false, settings);
+    }
+
+    // The ghost is parented outside the marker root so the root can move away from it, which
+    // also means it outlives the marker unless it is taken down here.
+    private void OnDestroy()
+    {
+        DestroyGhost();
+    }
+
+    private void OnDisable()
+    {
+        DestroyGhost();
+    }
+
+    private void DestroyGhost()
+    {
+        if (ghostMaterial != null)
+            Destroy(ghostMaterial);
+
+        if (ghostRenderer != null)
+            Destroy(ghostRenderer.gameObject);
+
+        ghostMaterial = null;
+        ghostRenderer = null;
+    }
+
+    private bool CanFadeMove(Vector3 worldPosition)
+    {
+        return marker != null &&
+               marker.renderer != null &&
+               marker.renderer.transform != transform &&
+               marker.renderer.enabled &&
+               appearFadeProgress > 0f &&
+               marker.isPlaced &&
+               !marker.isControllerMoving &&
+               GetAppearFadeSeconds() > 0f &&
+               (worldPosition - transform.position).sqrMagnitude >=
+                   MoveFadeMinMeters * MoveFadeMinMeters;
+    }
+
     // The visibility policy switches the renderer on the frame the marker appears, so the
     // fade-in starts from that edge instead of from a call the manager would have to make.
-    // Going away is the mirror: the policy keeps the renderer on while the fade runs down,
-    // and the renderer is switched off here once nothing is left to draw.
     private bool TickAppearFade()
     {
         bool centerDrawn = marker != null && marker.renderer != null && marker.renderer.enabled;
@@ -292,6 +423,8 @@ public class SourceMarkerVisual : MonoBehaviour
 
     public void DestroyResources()
     {
+        DestroyGhost();
+
         if (marker != null && marker.centerMaterial != null)
         {
             Destroy(marker.centerMaterial);

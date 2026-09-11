@@ -1,9 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
-/// <summary>Marks one config float as a slider on the Beam Pro settings screen.</summary>
+/// <summary>Marks one config float as a slider, or one config bool as a checkbox, on the Beam Pro settings screen.</summary>
 [AttributeUsage(AttributeTargets.Field)]
 public sealed class RuntimeTunableAttribute : Attribute
 {
@@ -12,6 +13,10 @@ public sealed class RuntimeTunableAttribute : Attribute
         Minimum = minimum;
         Maximum = maximum;
         Label = label;
+    }
+
+    public RuntimeTunableAttribute(string label) : this(0f, 1f, label)
+    {
     }
 
     public float Minimum { get; }
@@ -25,32 +30,45 @@ public sealed class RuntimeTunableField
     private const string SaveKeyPrefix = "RadVis.Tunable.";
 
     private readonly UnityEngine.Object owner;
+    private readonly object target;
     private readonly FieldInfo field;
     private readonly RuntimeTunableAttribute attribute;
-    private readonly string category;
+    private readonly string fieldPath;
+    private readonly string label;
 
     public RuntimeTunableField(
-        UnityEngine.Object owningAsset,
+        UnityEngine.Object owningObject,
+        object fieldTarget,
         FieldInfo tunableField,
         RuntimeTunableAttribute tunableAttribute,
-        string owningCategory)
+        string path,
+        string rowLabel)
     {
-        owner = owningAsset;
+        owner = owningObject;
+        target = fieldTarget;
         field = tunableField;
         attribute = tunableAttribute;
-        category = owningCategory;
+        fieldPath = path;
+        label = rowLabel;
     }
 
-    public string Label => attribute.Label;
-    public string Category => category;
+    public string Label => label;
+    public string Category => owner is ScriptableObject ? owner.name : owner.GetType().Name;
     public float Minimum => attribute.Minimum;
     public float Maximum => attribute.Maximum;
-    public string SaveKey => SaveKeyPrefix + owner.name + "." + field.Name;
-    public float Value => (float)field.GetValue(owner);
+    public string SaveKey => SaveKeyPrefix + owner.name + "." + fieldPath;
+    public bool IsToggle => field.FieldType == typeof(bool);
+
+    public float Value => IsToggle
+        ? ((bool)field.GetValue(target) ? 1f : 0f)
+        : (float)field.GetValue(target);
 
     public void SetValue(float value)
     {
-        field.SetValue(owner, Mathf.Clamp(value, attribute.Minimum, attribute.Maximum));
+        if (IsToggle)
+            field.SetValue(target, value >= 0.5f);
+        else
+            field.SetValue(target, Mathf.Clamp(value, attribute.Minimum, attribute.Maximum));
     }
 }
 
@@ -62,12 +80,8 @@ public static class RuntimeTunable
     private const BindingFlags FieldFlags =
         BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-    private const string MarkerCategory = "(a) Marker";
-    private const string OffscreenCategory = "(b) Off-screen Cue";
-    private const string ProximityCategory = "(c) Proximity Information";
-    private const string UncertaintyCategory = "(d) Uncertainty Footprint";
-    private const string DetectorCategory = "(e) Detector";
-    private const string SceneCategory = "Scene";
+    private static readonly Dictionary<string, float> defaults =
+        new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
 
     public static void Collect(MarkVisualConfig config, List<RuntimeTunableField> results)
     {
@@ -77,13 +91,9 @@ public static class RuntimeTunable
             return;
 
         HashSet<ScriptableObject> visited = new HashSet<ScriptableObject>();
-        CollectAsset(config, visited, results, MarkerCategory);
-        CollectPrefab(config.MarkerPrefab, visited, results, MarkerCategory);
-        CollectPrefab(
-            config.OffscreenPrefab != null ? config.OffscreenPrefab.gameObject : null,
-            visited,
-            results,
-            OffscreenCategory);
+        CollectAsset(config, visited, results);
+        CollectPrefab(config.MarkerPrefab, visited, results);
+        CollectPrefab(config.OffscreenPrefab != null ? config.OffscreenPrefab.gameObject : null, visited, results);
 
         IReadOnlyList<SourcePresentation> proximity = config.ProximityPrefabs;
         if (proximity != null)
@@ -91,7 +101,7 @@ public static class RuntimeTunable
             for (int index = 0; index < proximity.Count; index++)
             {
                 SourcePresentation entry = proximity[index];
-                CollectPrefab(entry != null ? entry.gameObject : null, visited, results, ProximityCategory);
+                CollectPrefab(entry != null ? entry.gameObject : null, visited, results);
             }
         }
 
@@ -102,12 +112,12 @@ public static class RuntimeTunable
             for (int index = 0; index < uncertainty.Count; index++)
             {
                 UncertaintyPresentation entry = uncertainty[index];
-                CollectPrefab(entry != null ? entry.gameObject : null, visited, results, UncertaintyCategory);
+                CollectPrefab(entry != null ? entry.gameObject : null, visited, results);
             }
         }
 
-        CollectPrefab(config.DetectorPrefab, visited, results, DetectorCategory);
-        CollectSceneComponents(results, SceneCategory);
+        CollectPrefab(config.DetectorPrefab, visited, results);
+        CollectSceneComponents(visited, results);
     }
 
     public static void Save(RuntimeTunableField tunable)
@@ -121,6 +131,21 @@ public static class RuntimeTunable
     public static void Flush()
     {
         PlayerPrefs.Save();
+    }
+
+    // The first Collect of a session runs before Restore or any slider writes, so the value it
+    // saw is the asset's own and is what Reset returns to.
+    public static void ResetToDefaults(List<RuntimeTunableField> tunables)
+    {
+        for (int index = 0; index < tunables.Count; index++)
+        {
+            RuntimeTunableField tunable = tunables[index];
+
+            if (defaults.TryGetValue(tunable.SaveKey, out float defaultValue))
+                tunable.SetValue(defaultValue);
+
+            PlayerPrefs.DeleteKey(tunable.SaveKey);
+        }
     }
 
     // Editor Play mode keeps whatever the sliders wrote into the asset, so restoring there would
@@ -145,8 +170,7 @@ public static class RuntimeTunable
     private static void CollectPrefab(
         GameObject prefab,
         HashSet<ScriptableObject> visited,
-        List<RuntimeTunableField> results,
-        string category)
+        List<RuntimeTunableField> results)
     {
         if (prefab == null)
             return;
@@ -156,51 +180,54 @@ public static class RuntimeTunable
         MonoBehaviour[] components = prefab.GetComponents<MonoBehaviour>();
 
         for (int index = 0; index < components.Length; index++)
+            CollectReferencedAssets(components[index], visited, results);
+    }
+
+    private static void CollectSceneComponents(
+        HashSet<ScriptableObject> visited,
+        List<RuntimeTunableField> results)
+    {
+        MonoBehaviour[] components =
+            UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
+
+        for (int index = 0; index < components.Length; index++)
         {
-            MonoBehaviour component = components[index];
+            CollectFields(components[index], results);
+            CollectReferencedAssets(components[index], visited, results);
+        }
+    }
 
-            if (component == null)
-                continue;
+    private static void CollectReferencedAssets(
+        MonoBehaviour component,
+        HashSet<ScriptableObject> visited,
+        List<RuntimeTunableField> results)
+    {
+        if (component == null)
+            return;
 
-            FieldInfo[] fields = component.GetType().GetFields(FieldFlags);
+        FieldInfo[] fields = component.GetType().GetFields(FieldFlags);
 
-            for (int fieldIndex = 0; fieldIndex < fields.Length; fieldIndex++)
-            {
-                ScriptableObject asset = fields[fieldIndex].GetValue(component) as ScriptableObject;
+        for (int index = 0; index < fields.Length; index++)
+        {
+            ScriptableObject asset = fields[index].GetValue(component) as ScriptableObject;
 
-                if (asset != null)
-                    CollectAsset(asset, visited, results, category);
-            }
+            if (asset != null)
+                CollectAsset(asset, visited, results);
         }
     }
 
     private static void CollectAsset(
         ScriptableObject asset,
         HashSet<ScriptableObject> visited,
-        List<RuntimeTunableField> results,
-        string category)
+        List<RuntimeTunableField> results)
     {
         if (asset == null || !visited.Add(asset))
             return;
 
-        CollectFields(asset, results, category);
+        CollectFields(asset, results);
     }
 
-    // Scene text is drawn by components, not by a look config, so the sweep reaches the
-    // HUD and anything else that marks a field without wiring a reference to this screen.
-    private static void CollectSceneComponents(List<RuntimeTunableField> results, string category)
-    {
-        MonoBehaviour[] components =
-            UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
-
-        for (int index = 0; index < components.Length; index++)
-            CollectFields(components[index], results, category);
-    }
-
-    private static void CollectFields(
-        UnityEngine.Object owner,
-        List<RuntimeTunableField> results,
-        string category)
+    private static void CollectFields(UnityEngine.Object owner, List<RuntimeTunableField> results)
     {
         if (owner == null)
             return;
@@ -211,14 +238,72 @@ public static class RuntimeTunable
         {
             FieldInfo field = fields[index];
 
-            if (field.FieldType != typeof(float))
+            if (TryGetTunable(field, out RuntimeTunableAttribute attribute))
+            {
+                Add(owner, owner, field, attribute, field.Name, attribute.Label, results);
+                continue;
+            }
+
+            if (!typeof(IList).IsAssignableFrom(field.FieldType))
                 continue;
 
-            RuntimeTunableAttribute attribute =
-                field.GetCustomAttribute<RuntimeTunableAttribute>();
+            IList list = field.GetValue(owner) as IList;
 
-            if (attribute != null)
-                results.Add(new RuntimeTunableField(owner, field, attribute, category));
+            if (list == null)
+                continue;
+
+            for (int element = 0; element < list.Count; element++)
+            {
+                object item = list[element];
+
+                // A struct element would come back boxed, so a write to it would not reach the list.
+                if (item == null || item is UnityEngine.Object || item.GetType().IsValueType)
+                    continue;
+
+                FieldInfo[] itemFields = item.GetType().GetFields(FieldFlags);
+
+                for (int itemIndex = 0; itemIndex < itemFields.Length; itemIndex++)
+                {
+                    FieldInfo itemField = itemFields[itemIndex];
+
+                    if (!TryGetTunable(itemField, out RuntimeTunableAttribute itemAttribute))
+                        continue;
+
+                    Add(
+                        owner,
+                        item,
+                        itemField,
+                        itemAttribute,
+                        field.Name + "[" + element + "]." + itemField.Name,
+                        string.Format(itemAttribute.Label, element + 1),
+                        results);
+                }
+            }
         }
+    }
+
+    private static bool TryGetTunable(FieldInfo field, out RuntimeTunableAttribute attribute)
+    {
+        attribute = field.FieldType == typeof(float) || field.FieldType == typeof(bool)
+            ? field.GetCustomAttribute<RuntimeTunableAttribute>()
+            : null;
+
+        return attribute != null;
+    }
+
+    private static void Add(
+        UnityEngine.Object owner,
+        object target,
+        FieldInfo field,
+        RuntimeTunableAttribute attribute,
+        string fieldPath,
+        string label,
+        List<RuntimeTunableField> results)
+    {
+        RuntimeTunableField tunable = new RuntimeTunableField(owner, target, field, attribute, fieldPath, label);
+        results.Add(tunable);
+
+        if (!defaults.ContainsKey(tunable.SaveKey))
+            defaults.Add(tunable.SaveKey, tunable.Value);
     }
 }

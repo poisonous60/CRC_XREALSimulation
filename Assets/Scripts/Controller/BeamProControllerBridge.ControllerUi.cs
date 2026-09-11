@@ -82,7 +82,7 @@ public partial class BeamProControllerBridge
             workflowButtonMinFontSize,
             workflowButtonMaxFontSize);
         label.alignment = TextAlignmentOptions.Center;
-        label.margin = new Vector4(3f, 1f, 3f, 1f);
+        label.margin = workflowButtonMargin;
     }
 
     private static void ConfigureSingleLineText(

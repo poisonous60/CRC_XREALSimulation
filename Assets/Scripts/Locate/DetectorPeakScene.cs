@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
 
-/// <summary>Averages each detector's readings, then draws the source disc at the strongest one.</summary>
+/// <summary>Averages each detector's readings, then draws the source disc at the strongest one, or at every one above the threshold.</summary>
 [DisallowMultipleComponent]
 public sealed class DetectorPeakScene : MonoBehaviour
 {
     [Header("Configuration")]
-    [Tooltip("Threshold and window length of the strongest-detector rule. Empty draws nothing.")]
+    [Tooltip("Threshold, window length and single-or-all mode of the detector rule. Empty draws nothing.")]
     [SerializeField] private DetectorPeakConfig config;
 
     [Header("References")]
@@ -18,11 +18,21 @@ public sealed class DetectorPeakScene : MonoBehaviour
     [Tooltip("Optional. The first one in the scene is used when empty.")]
     [SerializeField] private RadiationReceiver radiationReceiver;
 
+    // Key of the single Source Marker. In show-all mode each disc is keyed by its detector id instead.
+    private const string SingleSourceKey = "";
+
     private sealed class WindowSlot
     {
         public string serverTime;
         public readonly Dictionary<string, float> values =
             new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private sealed class ShownSource
+    {
+        public string detectorId;
+        public float meanCps;
+        public Vector3 worldPoint;
     }
 
     private readonly List<WindowSlot> slots = new List<WindowSlot>();
@@ -32,12 +42,18 @@ public sealed class DetectorPeakScene : MonoBehaviour
         new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, int> windowCounts =
         new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, float> windowMeans =
+        new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, float> targetMeans =
+        new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, ShownSource> shownSources =
+        new Dictionary<string, ShownSource>(StringComparer.OrdinalIgnoreCase);
+    private readonly List<string> staleKeys = new List<string>();
 
     private bool subscribed;
+    private bool shownAllAboveThreshold;
     private string winnerDetectorId = "";
     private float winnerMeanCps = -1f;
-    private Vector3 shownSourceWorldPoint;
-    private bool sourceShown;
 
     private void Awake()
     {
@@ -71,20 +87,36 @@ public sealed class DetectorPeakScene : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (!sourceShown)
-            return;
-
-        // A ROOM_ORIGIN re-alignment moves the winner's marker without a new reading.
-        if (!TryResolveWinnerPoint(out Vector3 worldPoint))
+        // The settings checkbox writes the config directly, so a mode flip is noticed here, not on the next packet.
+        if (config != null && config.ShowAllAboveThreshold != shownAllAboveThreshold)
         {
-            HideSource();
-            return;
+            shownAllAboveThreshold = config.ShowAllAboveThreshold;
+            RefreshSources();
         }
 
-        if ((worldPoint - shownSourceWorldPoint).sqrMagnitude <= 1e-8f)
+        if (shownSources.Count == 0)
             return;
 
-        ShowSource(worldPoint);
+        staleKeys.Clear();
+
+        // A ROOM_ORIGIN re-alignment moves the detector markers without a new reading.
+        foreach (KeyValuePair<string, ShownSource> pair in shownSources)
+        {
+            ShownSource shown = pair.Value;
+
+            if (!TryResolvePoint(shown.detectorId, out Vector3 worldPoint))
+            {
+                staleKeys.Add(pair.Key);
+                continue;
+            }
+
+            if ((worldPoint - shown.worldPoint).sqrMagnitude <= 1e-8f)
+                continue;
+
+            Show(pair.Key, shown.detectorId, worldPoint, shown.meanCps);
+        }
+
+        HideKeys(staleKeys);
     }
 
     private void ResolveReferences()
@@ -109,12 +141,9 @@ public sealed class DetectorPeakScene : MonoBehaviour
         ResolveReferences();
 
         Push(radiationReceiver != null ? radiationReceiver.LatestServerTime : "", deviceData);
+        ComputeWindowMeans();
         PickWinner();
-
-        if (TryResolveWinnerPoint(out Vector3 worldPoint))
-            ShowSource(worldPoint);
-        else
-            HideSource();
+        RefreshSources();
     }
 
     private void Push(string serverTime, Dictionary<string, float> deviceData)
@@ -164,15 +193,11 @@ public sealed class DetectorPeakScene : MonoBehaviour
             slots.RemoveAt(0);
     }
 
-    private void PickWinner()
+    private void ComputeWindowMeans()
     {
         windowSums.Clear();
         windowCounts.Clear();
-
-        string standingDetectorId = winnerDetectorId;
-
-        winnerDetectorId = "";
-        winnerMeanCps = -1f;
+        windowMeans.Clear();
 
         // The newest slot is still being filled, so it is left out of the mean.
         int countedSlots = slots.Count - 1;
@@ -192,9 +217,6 @@ public sealed class DetectorPeakScene : MonoBehaviour
         }
 
         float now = Time.unscaledTime;
-        string bestDetectorId = "";
-        float bestMean = -1f;
-        float standingMean = -1f;
 
         foreach (KeyValuePair<string, float> pair in windowSums)
         {
@@ -204,14 +226,25 @@ public sealed class DetectorPeakScene : MonoBehaviour
                 continue;
             }
 
-            float mean = pair.Value / Mathf.Max(1, windowCounts[pair.Key]);
+            windowMeans[pair.Key] = pair.Value / Mathf.Max(1, windowCounts[pair.Key]);
+        }
+    }
 
+    private void PickWinner()
+    {
+        string standingDetectorId = winnerDetectorId;
+        string bestDetectorId = "";
+        float bestMean = -1f;
+        float standingMean = -1f;
+
+        foreach (KeyValuePair<string, float> pair in windowMeans)
+        {
             if (string.Equals(pair.Key, standingDetectorId, StringComparison.OrdinalIgnoreCase))
-                standingMean = mean;
+                standingMean = pair.Value;
 
-            if (mean > bestMean)
+            if (pair.Value > bestMean)
             {
-                bestMean = mean;
+                bestMean = pair.Value;
                 bestDetectorId = pair.Key;
             }
         }
@@ -227,46 +260,101 @@ public sealed class DetectorPeakScene : MonoBehaviour
         winnerMeanCps = bestMean;
     }
 
-    private bool TryResolveWinnerPoint(out Vector3 worldPoint)
+    private void RefreshSources()
+    {
+        targetMeans.Clear();
+
+        if (config.ShowAllAboveThreshold)
+        {
+            foreach (KeyValuePair<string, float> pair in windowMeans)
+            {
+                if (pair.Value >= config.ThresholdCps)
+                    targetMeans[pair.Key] = pair.Value;
+            }
+        }
+        else if (!string.IsNullOrEmpty(winnerDetectorId) && winnerMeanCps >= config.ThresholdCps)
+        {
+            targetMeans[SingleSourceKey] = winnerMeanCps;
+        }
+
+        staleKeys.Clear();
+
+        foreach (KeyValuePair<string, ShownSource> pair in shownSources)
+        {
+            if (!targetMeans.ContainsKey(pair.Key))
+                staleKeys.Add(pair.Key);
+        }
+
+        HideKeys(staleKeys);
+
+        foreach (KeyValuePair<string, float> pair in targetMeans)
+        {
+            string detectorId = pair.Key == SingleSourceKey ? winnerDetectorId : pair.Key;
+
+            if (TryResolvePoint(detectorId, out Vector3 worldPoint))
+                Show(pair.Key, detectorId, worldPoint, pair.Value);
+            else
+                Hide(pair.Key);
+        }
+    }
+
+    private bool TryResolvePoint(string detectorId, out Vector3 worldPoint)
     {
         worldPoint = Vector3.zero;
 
-        return config != null &&
-               markerManager != null &&
-               !string.IsNullOrEmpty(winnerDetectorId) &&
-               winnerMeanCps >= config.ThresholdCps &&
-               markerManager.TryGetPlacedMarkerPosition(winnerDetectorId, out worldPoint);
+        return markerManager != null &&
+               !string.IsNullOrEmpty(detectorId) &&
+               markerManager.TryGetPlacedMarkerPosition(detectorId, out worldPoint);
     }
 
-    private void ShowSource(Vector3 worldPoint)
+    private void Show(string key, string detectorId, Vector3 worldPoint, float meanCps)
     {
-        if (!markerManager.TryShowComputedSource(worldPoint, winnerMeanCps, out string resultMessage))
+        if (!markerManager.TryShowComputedSourceAt(key, worldPoint, meanCps, out string resultMessage))
         {
             Debug.LogWarning($"[DetectorPeakScene] {resultMessage}");
             return;
         }
 
-        shownSourceWorldPoint = worldPoint;
-        sourceShown = true;
+        if (!shownSources.TryGetValue(key, out ShownSource shown))
+        {
+            shown = new ShownSource();
+            shownSources.Add(key, shown);
+        }
+
+        shown.detectorId = detectorId;
+        shown.meanCps = meanCps;
+        shown.worldPoint = worldPoint;
     }
 
-    private void HideSource()
+    private void Hide(string key)
     {
-        if (!sourceShown)
+        if (!shownSources.Remove(key))
             return;
 
-        sourceShown = false;
-
         if (markerManager != null)
-            markerManager.HideComputedSource();
+            markerManager.HideComputedSourceAt(key);
+    }
+
+    private void HideKeys(List<string> keys)
+    {
+        for (int index = 0; index < keys.Count; index++)
+            Hide(keys[index]);
+    }
+
+    private void HideAll()
+    {
+        staleKeys.Clear();
+        staleKeys.AddRange(shownSources.Keys);
+        HideKeys(staleKeys);
     }
 
     private void Reset()
     {
         slots.Clear();
         lastReadingTime.Clear();
+        windowMeans.Clear();
         winnerDetectorId = "";
         winnerMeanCps = -1f;
-        HideSource();
+        HideAll();
     }
 }

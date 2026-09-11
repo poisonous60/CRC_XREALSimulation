@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: de5af01dae453d24098d31e981fd3a87, type: 3}
   m_Name: c_04_screen_fill_config
   m_EditorClassIdentifier: 
-  triggerRadiusMeters: 2
+  triggerRadiusMeters: 1
   fillAlpha: 0.273
   fadeSeconds: 0.5
   fadeCurve:

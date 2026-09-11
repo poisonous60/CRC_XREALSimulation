@@ -81,8 +81,13 @@ public partial class DetectorWorldMarkerManager
                 }
 
                 existing.root.transform.SetParent(parent != null && parentMarkerToAnchor ? parent : transform, true);
-                existing.root.transform.position = finalPosition;
+
                 existing.root.transform.localScale = Vector3.one * fixedMarkerSize;
+
+                if (existing.visual != null)
+                    existing.visual.MoveTo(finalPosition);
+                else
+                    existing.root.transform.position = finalPosition;
                 existing.savedPosition = finalPosition;
 
                 if (estimatedDistance > 0f)
@@ -103,7 +108,7 @@ public partial class DetectorWorldMarkerManager
         bool usesDetectorLook =
             visualSetting != null &&
             visualSetting.DetectorPrefab != null &&
-            !DetectorIdsEqual(detectorId, sourceMarkerKey);
+            !IsSourceMarkerKey(detectorId);
 
         GameObject prefab = markerPrefab;
 

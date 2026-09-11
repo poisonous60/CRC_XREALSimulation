@@ -6,6 +6,7 @@ using UnityEngine;
 public class StatusColorBand
 {
     [Tooltip("Upper CPS bound of this band. The lowest band the reading fits into wins.")]
+    [RuntimeTunable(0f, 100f, "Band {0} max (cps)")]
     [SerializeField, Min(0f)] private float maxCps = 10f;
 
     [Tooltip("Marker color inside this band. Alpha comes from the marker's own alpha setting.")]

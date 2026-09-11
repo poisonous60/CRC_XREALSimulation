@@ -15,3 +15,12 @@ MonoBehaviour:
   unlockTapCount: 8
   unlockWindowSeconds: 1
   tapGroupingSeconds: 0.05
+  topMargin: 14
+  titleHeight: 8
+  titleGap: 2
+  bottomMargin: 30
+  backButtonFromBottom: 8.8
+  rowPaddingTop: 0
+  rowPaddingBottom: 0
+  rowSpacing: 12
+  categorySpacing: 24

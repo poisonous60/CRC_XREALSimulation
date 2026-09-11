@@ -22,7 +22,7 @@ public partial class ARDetectorHud
 
         for (int index = 0; index < markerStates.Count; index++)
         {
-            if (DetectorId.Equals(markerStates[index].detectorId, markerManager.SourceMarkerKey))
+            if (markerManager.IsSourceMarkerKey(markerStates[index].detectorId))
                 cueStates.Add(markerStates[index]);
         }
 

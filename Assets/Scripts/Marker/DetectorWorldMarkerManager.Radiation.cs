@@ -64,7 +64,7 @@ public partial class DetectorWorldMarkerManager
     {
         foreach (KeyValuePair<string, SourceMarker> pair in markers)
         {
-            if (DetectorIdsEqual(pair.Key, sourceMarkerKey))
+            if (IsSourceMarkerKey(pair.Key))
                 continue;
 
             float value = data.TryGetValue(pair.Key, out float reported) ? reported : -1f;

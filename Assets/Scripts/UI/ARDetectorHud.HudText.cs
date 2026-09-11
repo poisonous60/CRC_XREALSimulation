@@ -196,11 +196,10 @@ public partial class ARDetectorHud
 
     private bool IsSourceMarkerId(string detectorId)
     {
-        string sourceKey = markerManager != null ? markerManager.SourceMarkerKey : "SOURCE";
-        return string.Equals(
-            NormalizeDetectorId(detectorId),
-            NormalizeDetectorId(sourceKey),
-            StringComparison.OrdinalIgnoreCase);
+        if (markerManager != null)
+            return markerManager.IsSourceMarkerKey(detectorId);
+
+        return string.Equals(NormalizeDetectorId(detectorId), "SOURCE", StringComparison.OrdinalIgnoreCase);
     }
 
     private string NormalizeDetectorId(string detectorId)

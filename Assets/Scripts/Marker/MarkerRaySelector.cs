@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -11,12 +12,14 @@ public class MarkerRaySelector
     public float radiusMultiplier = 1.25f;
     public float fixedMarkerSize = 0.2f;
 
+    // A computed source disc is a live readout; moving it would save a source position.
     public bool IsSelectable(SourceMarker marker)
     {
         return marker != null &&
                marker.root != null &&
                marker.isVisible &&
                marker.isPlaced &&
+               !string.Equals(marker.lastPlacementMethod, DetectorWorldMarkerManager.ComputedPlacementMethod, StringComparison.Ordinal) &&
                !marker.isFollowingPlacementOrigin &&
                marker.centerVisualRequested &&
                marker.renderer != null &&

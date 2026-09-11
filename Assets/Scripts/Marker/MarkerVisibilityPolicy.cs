@@ -65,8 +65,6 @@ public class MarkerVisibilityPolicy
         if (usePlacementVisual)
             marker.placementVisual.SetActive(visible);
 
-        // The center fades itself out, so it keeps its renderer for a few frames after this
-        // says it is gone. SourceMarkerVisual.Hide reports when it may finally go off.
         marker.centerDrawRequested = visible && centerVisible;
 
         bool drawCenter = marker.centerDrawRequested ||

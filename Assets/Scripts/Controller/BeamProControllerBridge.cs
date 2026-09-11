@@ -59,6 +59,8 @@ public partial class BeamProControllerBridge : MonoBehaviour
     [SerializeField, Min(12f)] private float workflowGuideMaxFontSize = 44f;
     [SerializeField, Min(6f)] private float workflowButtonMinFontSize = 10f;
     [SerializeField, Min(10f)] private float workflowButtonMaxFontSize = 20f;
+    [Tooltip("Inset of the button label inside its rect: left, top, right, bottom. Detector rows copy it.")]
+    [SerializeField] private Vector4 workflowButtonMargin = new Vector4(3f, 1f, 3f, 1f);
 
     [Header("Behavior")]
     [SerializeField] private bool autoFindReferences = true;
