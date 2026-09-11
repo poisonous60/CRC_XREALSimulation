@@ -169,6 +169,8 @@ public sealed class DetectorPeakScene : MonoBehaviour
         windowSums.Clear();
         windowCounts.Clear();
 
+        string standingDetectorId = winnerDetectorId;
+
         winnerDetectorId = "";
         winnerMeanCps = -1f;
 
@@ -192,6 +194,7 @@ public sealed class DetectorPeakScene : MonoBehaviour
         float now = Time.unscaledTime;
         string bestDetectorId = "";
         float bestMean = -1f;
+        float standingMean = -1f;
 
         foreach (KeyValuePair<string, float> pair in windowSums)
         {
@@ -203,11 +206,21 @@ public sealed class DetectorPeakScene : MonoBehaviour
 
             float mean = pair.Value / Mathf.Max(1, windowCounts[pair.Key]);
 
+            if (string.Equals(pair.Key, standingDetectorId, StringComparison.OrdinalIgnoreCase))
+                standingMean = mean;
+
             if (mean > bestMean)
             {
                 bestMean = mean;
                 bestDetectorId = pair.Key;
             }
+        }
+
+        // Poisson scatter alone reorders two detectors that read almost the same.
+        if (standingMean >= 0f && bestMean < standingMean * (1f + config.SwitchMarginRatio))
+        {
+            bestDetectorId = standingDetectorId;
+            bestMean = standingMean;
         }
 
         winnerDetectorId = bestDetectorId;

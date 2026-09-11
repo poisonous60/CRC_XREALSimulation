@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
 using UnityEngine;
@@ -112,7 +113,7 @@ public sealed class MdnsServerDiscovery
                 using (UdpClient client = new UdpClient(new IPEndPoint(IPAddress.Any, 0)))
                 {
                     client.Client.ReceiveTimeout = ReceiveTimeoutMilliseconds;
-                    client.Send(query, query.Length, MulticastAddress, MulticastPort);
+                    SendOnEveryAdapter(client, query);
 
                     while (isAlive && isQuerying && elapsedMilliseconds < queryIntervalMilliseconds)
                     {
@@ -164,6 +165,56 @@ public sealed class MdnsServerDiscovery
             if (isAlive && isQuerying && remainingMilliseconds > 0)
                 Thread.Sleep(remainingMilliseconds);
         }
+    }
+
+    // Windows sends multicast out one adapter, the one whose 224.0.0.0/4 route has the lowest
+    // metric. A VPN tunnel or a link-dead NIC wins that race and the send fails with
+    // WSAEHOSTUNREACH, so the query goes out every adapter instead. One datagram each.
+    private static void SendOnEveryAdapter(UdpClient client, byte[] query)
+    {
+        bool sentAny = false;
+
+        foreach (IPAddress localAddress in GetLocalIPv4Addresses())
+        {
+            try
+            {
+                client.Client.SetSocketOption(
+                    SocketOptionLevel.IP,
+                    SocketOptionName.MulticastInterface,
+                    localAddress.GetAddressBytes());
+                client.Send(query, query.Length, MulticastAddress, MulticastPort);
+                sentAny = true;
+            }
+            catch (SocketException)
+            {
+            }
+        }
+
+        if (!sentAny)
+            client.Send(query, query.Length, MulticastAddress, MulticastPort);
+    }
+
+    private static List<IPAddress> GetLocalIPv4Addresses()
+    {
+        List<IPAddress> addresses = new List<IPAddress>();
+
+        foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            if (adapter.OperationalStatus != OperationalStatus.Up ||
+                !adapter.SupportsMulticast ||
+                adapter.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+            {
+                continue;
+            }
+
+            foreach (UnicastIPAddressInformation unicast in adapter.GetIPProperties().UnicastAddresses)
+            {
+                if (unicast.Address.AddressFamily == AddressFamily.InterNetwork)
+                    addresses.Add(unicast.Address);
+            }
+        }
+
+        return addresses;
     }
 
     private static byte[] BuildPointerQuery(string name)

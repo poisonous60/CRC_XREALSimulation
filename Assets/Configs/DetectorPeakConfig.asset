@@ -15,3 +15,4 @@ MonoBehaviour:
   thresholdCps: 3
   windowSeconds: 3
   freshnessSeconds: 5
+  switchMarginRatio: 0

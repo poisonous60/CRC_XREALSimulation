@@ -16,6 +16,31 @@ MonoBehaviour:
   markerSizeMeters: 1.5
   placementPrefab: {fileID: 6387016307566893731, guid: f6d69e8b4d22668459be4f0909556c34, type: 3}
   placementSizeMeters: 0.03
+  appearFadeSeconds: 0
+  appearFadeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   statusBands:
   - maxCps: 10
     color: {r: 0, g: 1, b: 0, a: 1}
@@ -61,6 +86,7 @@ MonoBehaviour:
   - {fileID: 4378110893968593232, guid: ebabb7a645604f2380ef30813b67d9b7, type: 3}
   uncertaintyPrefabs: []
   uncertaintyColor: {r: 0.84, g: 0.16, b: 0.16, a: 0.18}
+  detectorPrefab: {fileID: 0}
   showFalloffShells: 0
   falloffReferenceDistanceMeters: 0.08
   falloffMaxRadiusMeters: 5

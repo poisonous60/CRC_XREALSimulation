@@ -16,7 +16,11 @@ public class DetectorPeakConfig : ScriptableObject
     [Tooltip("Age above which a detector's last reading stops counting as reporting. Same 5 s rule the marker manager uses for its snapshot.")]
     [SerializeField, Min(0.5f)] private float freshnessSeconds = 5f;
 
+    [Tooltip("How far another detector's window mean has to beat the standing winner before the disc moves, as a fraction of the standing mean. 0 hands the disc to any lead, the behavior up to 2026-09-10. 0.4 holds it still for a source midway between two detectors 20 cm apart, where both read about 20 cps and a 3 s mean scatters 2.6.")]
+    [SerializeField, Min(0f)] private float switchMarginRatio;
+
     public float ThresholdCps => Mathf.Max(0f, thresholdCps);
     public int WindowSeconds => Mathf.Max(1, windowSeconds);
     public float FreshnessSeconds => Mathf.Max(0.5f, freshnessSeconds);
+    public float SwitchMarginRatio => Mathf.Max(0f, switchMarginRatio);
 }

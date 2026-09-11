@@ -6,10 +6,6 @@ using UnityEngine.UI;
 
 public partial class BeamProControllerBridge
 {
-    [Header("Detector Place Buttons")]
-    [Tooltip("Panel-pixel gap between two rows. Row position and size come from the Source button in the prefab.")]
-    [SerializeField, Min(0f)] private float detectorRowGapPixels = 20f;
-
     private readonly List<string> knownDetectorIds = new List<string>();
     private readonly List<Button> detectorButtons = new List<Button>();
     private bool detectorButtonsDirty;
@@ -70,7 +66,8 @@ public partial class BeamProControllerBridge
     }
 
     // Cloning the Source button keeps the row's image, hold handler and text child wired
-    // without a second template inside the controller prefab.
+    // without a second template inside the controller prefab. PlaceColumn's VerticalLayoutGroup
+    // stacks the clones, so nothing here touches a RectTransform.
     private void RebuildDetectorButtons()
     {
         if (controllerSourceActionButton == null)
@@ -83,11 +80,6 @@ public partial class BeamProControllerBridge
         if (templateRect == null)
             return;
 
-        Vector3 templateScale = templateRect.localScale;
-        Vector2 templateCenter = templateRect.anchoredPosition;
-        float rowStride =
-            templateRect.sizeDelta.y * Mathf.Abs(templateScale.y) + detectorRowGapPixels;
-
         for (int index = 0; index < knownDetectorIds.Count; index++)
         {
             string detectorId = knownDetectorIds[index];
@@ -97,10 +89,6 @@ public partial class BeamProControllerBridge
                 templateRect.parent);
             row.name = $"DetectorPlaceButton_{detectorId}";
             row.SetActive(true);
-
-            RectTransform rect = row.transform as RectTransform;
-            rect.localScale = templateScale;
-            rect.anchoredPosition = templateCenter + Vector2.down * (index * rowStride);
 
             SourceHoldPlaceButton hold = row.GetComponent<SourceHoldPlaceButton>();
             if (hold != null)

@@ -175,8 +175,21 @@ public class SourceMarkerVisual : MonoBehaviour
             MarkerMaterials.SetRendererTransparentColor(marker.renderer, drawnColor, 10, false, settings);
     }
 
+    // Mirrors OffscreenIndicatorView.Hide: false while the fade-out still needs frames, so
+    // MarkerVisibilityPolicy leaves the center renderer on until this reports it is done.
+    public bool Hide()
+    {
+        return marker == null ||
+               marker.renderer == null ||
+               !marker.renderer.enabled ||
+               GetAppearFadeSeconds() <= 0f ||
+               appearFadeProgress <= 0f;
+    }
+
     // The visibility policy switches the renderer on the frame the marker appears, so the
     // fade-in starts from that edge instead of from a call the manager would have to make.
+    // Going away is the mirror: the policy keeps the renderer on while the fade runs down,
+    // and the renderer is switched off here once nothing is left to draw.
     private bool TickAppearFade()
     {
         bool centerDrawn = marker != null && marker.renderer != null && marker.renderer.enabled;
@@ -188,14 +201,27 @@ public class SourceMarkerVisual : MonoBehaviour
             return true;
         }
 
-        if (appearFadeProgress >= 1f)
+        if (!centerDrawn)
             return false;
+
+        float target = marker.centerDrawRequested ? 1f : 0f;
+
+        if (Mathf.Approximately(appearFadeProgress, target))
+        {
+            if (target <= 0f)
+            {
+                marker.renderer.enabled = false;
+                wasCenterDrawn = false;
+            }
+
+            return false;
+        }
 
         float fadeSeconds = GetAppearFadeSeconds();
 
         appearFadeProgress = fadeSeconds > 0f
-            ? Mathf.MoveTowards(appearFadeProgress, 1f, Time.deltaTime / fadeSeconds)
-            : 1f;
+            ? Mathf.MoveTowards(appearFadeProgress, target, Time.deltaTime / fadeSeconds)
+            : target;
 
         return true;
     }

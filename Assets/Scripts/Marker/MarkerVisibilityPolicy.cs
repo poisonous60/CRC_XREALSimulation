@@ -65,6 +65,13 @@ public class MarkerVisibilityPolicy
         if (usePlacementVisual)
             marker.placementVisual.SetActive(visible);
 
+        // The center fades itself out, so it keeps its renderer for a few frames after this
+        // says it is gone. SourceMarkerVisual.Hide reports when it may finally go off.
+        marker.centerDrawRequested = visible && centerVisible;
+
+        bool drawCenter = marker.centerDrawRequested ||
+                          (marker.visual != null && !marker.visual.Hide());
+
         // The object stays active while hidden so its own components keep running.
         if (marker.bodyRenderers != null && marker.bodyRenderers.Length > 0)
         {
@@ -83,13 +90,13 @@ public class MarkerVisibilityPolicy
                 bool isCenter = bodyRenderer == marker.renderer;
                 bodyRenderer.enabled = !usePlacementVisual &&
                     (isCenter
-                        ? visible && centerVisible
+                        ? drawCenter
                         : visible && !isPreview && wasEnabledAtCreation);
             }
         }
         else if (marker.renderer != null)
         {
-            marker.renderer.enabled = !usePlacementVisual && visible && centerVisible;
+            marker.renderer.enabled = !usePlacementVisual && drawCenter;
         }
 
         if (marker.falloffShells != null)
