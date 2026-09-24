@@ -26,9 +26,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/HelloMR_SourceLocate.unity
     guid: 72d6f023ef9ba774088f154b32962f1e
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HelloMR_ImageOrigin_Detector.unity
     guid: 53a388340f37c8a45a9fcfee4453e3e9
+  - enabled: 1
+    path: Assets/Scenes/AnchorTest.unity
+    guid: 37aa4c9e6b351ed418ad9132146aef21
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 2e0fd753937dbc2408bf6f7a404426dd, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 289c1b55c9541489481df5cc06664110, type: 3}

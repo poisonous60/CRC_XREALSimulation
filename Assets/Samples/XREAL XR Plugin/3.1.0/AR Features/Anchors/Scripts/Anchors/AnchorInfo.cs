@@ -127,6 +127,8 @@ namespace Unity.XR.XREAL.Samples
 #if UNITY_6000_0_OR_NEWER
             Debug.Log($"[AnchorInfo] OnSaveClick begin");
             var result = await m_AnchorManager.TrySaveAnchorAsync(m_Anchor);
+            // XREAL completes the save from Task.Run, so the continuation would touch Unity objects off the main thread.
+            await Awaitable.MainThreadAsync();
             Debug.Log($"[AnchorInfo] OnSaveClick result={result.status.statusCode} guid={result.value} ");
             if (result.status.statusCode == UnityEngine.XR.ARSubsystems.XRResultStatus.StatusCode.UnqualifiedSuccess)
             {

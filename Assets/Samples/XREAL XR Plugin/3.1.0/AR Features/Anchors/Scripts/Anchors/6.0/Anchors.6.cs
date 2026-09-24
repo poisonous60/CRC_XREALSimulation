@@ -58,6 +58,8 @@ namespace Unity.XR.XREAL.Samples
         {
             Debug.Log($"[Anchors] LoadAllAnchors");
             var result = await m_AnchorManager.TryGetSavedAnchorIdsAsync(Unity.Collections.Allocator.Temp);
+            // XREAL completes these calls from Task.Run; ARAnchorManager must be called and create anchors on the main thread.
+            await Awaitable.MainThreadAsync();
             if (result.status.IsSuccess())
             {
                 var savedAnchorIds = result.value;
@@ -65,6 +67,7 @@ namespace Unity.XR.XREAL.Samples
                 {
                     Debug.Log($"[Anchors] Try Load {id}");
                     var loadResult = await m_AnchorManager.TryLoadAnchorAsync(id);
+                    await Awaitable.MainThreadAsync();
                     if (loadResult.status.IsSuccess())
                     {
                         var anchor = loadResult.value;
@@ -85,6 +88,7 @@ namespace Unity.XR.XREAL.Samples
         {
             Debug.Log($"[Anchors] EraseAllAnchors");
             var savedAnchorIds = await m_AnchorManager.TryGetSavedAnchorIdsAsync( Collections.Allocator.Persistent);
+            await Awaitable.MainThreadAsync();
             foreach (var persistentGuid in savedAnchorIds.value)
             {
                 Debug.Log($"[Anchors] TryEraseAnchorAsync {persistentGuid}");
