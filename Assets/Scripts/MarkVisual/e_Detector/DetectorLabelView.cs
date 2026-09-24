@@ -40,10 +40,12 @@ public class DetectorLabelView : MonoBehaviour
 
         EnsureText();
 
-        if (labelText.gameObject.activeSelf != marker.isVisible)
-            labelText.gameObject.SetActive(marker.isVisible);
+        bool visible = marker.isVisible && config.TextSizePixels > 0f;
 
-        if (!marker.isVisible)
+        if (labelText.gameObject.activeSelf != visible)
+            labelText.gameObject.SetActive(visible);
+
+        if (!visible)
             return;
 
         int cps = marker.lastRadiationValue >= 0f

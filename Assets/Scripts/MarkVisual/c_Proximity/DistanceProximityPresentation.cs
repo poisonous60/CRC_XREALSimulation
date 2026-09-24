@@ -61,8 +61,9 @@ public class DistanceProximityPresentation : SourcePresentation
         Transform cameraTransform = head.transform;
         float distance = Vector3.Distance(cameraTransform.position, source.position);
 
-        bool withinRange = config.MaximumVisibleDistanceMeters <= 0f ||
-                           distance <= config.MaximumVisibleDistanceMeters;
+        bool withinRange = config.TextSizePixels > 0f &&
+                           (config.MaximumVisibleDistanceMeters <= 0f ||
+                            distance <= config.MaximumVisibleDistanceMeters);
 
         if (distanceText.enabled != withinRange)
             distanceText.enabled = withinRange;

@@ -9,9 +9,9 @@ public class DetectorLabelConfig : ScriptableObject
     private const float MinimumDistanceMeters = 0.05f;
 
     [Header("Size")]
-    [Tooltip("Height of one text line on the glasses display, in pixels.")]
-    [RuntimeTunable(24f, 200f, "Label size (px)")]
-    [SerializeField, Min(1f)] private float textSizePixels = 40f;
+    [Tooltip("Height of one text line on the glasses display, in pixels. 0 hides the label.")]
+    [RuntimeTunable(0f, 200f, "Label size (px)")]
+    [SerializeField, Min(0f)] private float textSizePixels = 40f;
 
     [Tooltip("Head-to-detector distance at which the pixel size above is met.")]
     [SerializeField, Min(MinimumDistanceMeters)] private float referenceDistanceMeters = 2f;
@@ -33,7 +33,7 @@ public class DetectorLabelConfig : ScriptableObject
     [Tooltip("Outline color.")]
     [SerializeField] private Color outlineColor = Color.black;
 
-    public float TextSizePixels => Mathf.Max(1f, textSizePixels);
+    public float TextSizePixels => Mathf.Max(0f, textSizePixels);
     public float ReferenceDistanceMeters => Mathf.Max(MinimumDistanceMeters, referenceDistanceMeters);
     public float ApproachGrowth => approachGrowth;
     public float VerticalOffsetMeters => verticalOffsetMeters;

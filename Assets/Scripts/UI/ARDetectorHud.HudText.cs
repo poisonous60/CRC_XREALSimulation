@@ -41,6 +41,14 @@ public partial class ARDetectorHud
         if (hudText == null)
             return;
 
+        bool visible = hudFontSize > 0f;
+
+        if (hudText.enabled != visible)
+            hudText.enabled = visible;
+
+        if (!visible)
+            return;
+
         string selectedId = selectedMarkerIndex >= 0
             ? markerStates[selectedMarkerIndex].detectorId
             : "";

@@ -30,9 +30,9 @@ public partial class ARDetectorHud : MonoBehaviour
 
     [SerializeField] private Vector2 hudPixelSize = new Vector2(720f, 430f);
 
-    [Tooltip("Height of one HUD line on the glasses display, in pixels. The HUD is head-locked, so this size does not change with distance.")]
-    [RuntimeTunable(14f, 60f, "HUD size (px)")]
-    [SerializeField, Min(10f)] private float hudFontSize = 27f;
+    [Tooltip("Height of one HUD line on the glasses display, in pixels. The HUD is head-locked, so this size does not change with distance. 0 hides the HUD text.")]
+    [RuntimeTunable(0f, 60f, "HUD size (px)")]
+    [SerializeField, Min(0f)] private float hudFontSize = 27f;
 
     [SerializeField] private string radiationUnit = "CPS";
 
