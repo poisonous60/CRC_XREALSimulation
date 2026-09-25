@@ -95,6 +95,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4974694913845592562}
+  - component: {fileID: 3117393454807360171}
   m_Layer: 0
   m_Name: a_01_sphere
   m_TagString: Untagged
@@ -118,3 +119,16 @@ Transform:
   - {fileID: 5856518417516149171}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3117393454807360171
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6387016307566893731}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 209cd6cbbbf86c64fb87ae1c05a85ab6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  role: 0

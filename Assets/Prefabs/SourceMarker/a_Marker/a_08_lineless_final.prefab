@@ -95,6 +95,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7648667832963154758}
+  - component: {fileID: 3097722032453262173}
   m_Layer: 0
   m_Name: a_08_lineless_final
   m_TagString: Untagged
@@ -118,3 +119,16 @@ Transform:
   - {fileID: 494142309262347169}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3097722032453262173
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4831570725939092705}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 209cd6cbbbf86c64fb87ae1c05a85ab6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  role: 0

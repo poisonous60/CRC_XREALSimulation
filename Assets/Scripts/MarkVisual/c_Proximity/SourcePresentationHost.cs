@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Spawns every proximity presentation named by MarkVisualConfig.
+/// Spawns every proximity presentation in MarkVisualConfig's look list.
 /// </summary>
 [DisallowMultipleComponent]
 public class SourcePresentationHost : MonoBehaviour
@@ -39,9 +39,8 @@ public class SourcePresentationHost : MonoBehaviour
             return;
         }
 
-        IReadOnlyList<SourcePresentation> prefabs = config.ProximityPrefabs;
-        if (prefabs == null)
-            return;
+        List<SourcePresentation> prefabs = new List<SourcePresentation>();
+        config.GetLooks(prefabs);
 
         for (int index = 0; index < prefabs.Count; index++)
         {

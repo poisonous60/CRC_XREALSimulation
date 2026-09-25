@@ -12,24 +12,72 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfd3f835e48bd1748a20c259102e8a4e, type: 3}
   m_Name: MarkVisualConfig_HelloMR_SourceLocate
   m_EditorClassIdentifier: 
-  markerPrefab: {fileID: 6387016307566893731, guid: f6d69e8b4d22668459be4f0909556c34, type: 3}
+  looks:
+  - {fileID: 6387016307566893731, guid: f6d69e8b4d22668459be4f0909556c34, type: 3}
+  - {fileID: 8180540524684897268, guid: 2ba04508320a4fe4bbb5d8977d93ac2b, type: 3}
+  - {fileID: 7252252752940102783, guid: 122dde21e47bb554399be3cf9bb401e0, type: 3}
+  - {fileID: 8480089010875128755, guid: 383a119bdf53fb54bb04d2cdd3d0f9e0, type: 3}
   markerSizeMeters: 0.03
-  placementPrefab: {fileID: 0}
   placementSizeMeters: 0.03
+  appearFadeSeconds: 0
+  appearFadeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   statusBands:
   - maxCps: 1000
     color: {r: 0.84, g: 0.16, b: 0.16, a: 1}
   unknownColor: {r: 0.65, g: 0.65, b: 0.65, a: 1}
   hideLowCps: 0
   lowCpsColor: {r: 0.65, g: 0.65, b: 0.65, a: 1}
-  offscreenPrefab: {fileID: 6457213621338847519, guid: 2ba04508320a4fe4bbb5d8977d93ac2b, type: 3}
+  statusColorFadeSeconds: 0
+  statusColorFadeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   offscreenEdgeInset: 1
   offscreenUseStatusColor: 1
   offscreenColor: {r: 1, g: 1, b: 1, a: 1}
-  proximityPrefabs:
-  - {fileID: 7865643288987669811, guid: 122dde21e47bb554399be3cf9bb401e0, type: 3}
-  uncertaintyPrefabs:
-  - {fileID: 6206247320444693933, guid: 383a119bdf53fb54bb04d2cdd3d0f9e0, type: 3}
   uncertaintyColor: {r: 0.84, g: 0.16, b: 0.16, a: 0.18}
   showFalloffShells: 0
   falloffReferenceDistanceMeters: 0.08

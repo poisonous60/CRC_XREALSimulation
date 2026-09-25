@@ -129,7 +129,7 @@ public class OffscreenIndicatorPlacer
 
         if (MarkVisualConfig.TryLoad(out MarkVisualConfig visualSetting))
         {
-            prefab = visualSetting.OffscreenPrefab;
+            visualSetting.TryGetLook(out prefab);
             edgeInsetFraction = visualSetting.OffscreenEdgeInset;
         }
 

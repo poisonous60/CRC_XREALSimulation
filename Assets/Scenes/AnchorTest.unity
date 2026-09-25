@@ -440,6 +440,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: XR Interaction Hands Setup
       objectReference: {fileID: 0}
+    - target: {fileID: 7698955068414132528, guid: 3182b5074a6bf3d4887a44a38cbb9cb6, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7698955068414132528, guid: 3182b5074a6bf3d4887a44a38cbb9cb6, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7698955068414132528, guid: 3182b5074a6bf3d4887a44a38cbb9cb6, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8274312078609088744, guid: 3182b5074a6bf3d4887a44a38cbb9cb6, type: 3}
       propertyPath: m_LineDynamicsMode
       value: 0
@@ -662,7 +674,7 @@ MonoBehaviour:
   panelPrefab: {fileID: 3854427810096857825, guid: 8325b8af4488831468a3729881c91648, type: 3}
   captureManager: {fileID: 145385455}
   minPlaneHitDistanceMeters: 0.15
-  maxPlaneHitDistanceMeters: 10
+  maxPlaneHitDistanceMeters: 3
   defaultPlacementDistanceMeters: 2
   qualityIntervalSeconds: 0.5
   saveTimeoutSeconds: 10

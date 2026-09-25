@@ -96,6 +96,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4974694913845592562}
   - component: {fileID: 3817848873514838076}
+  - component: {fileID: 3600878123539108880}
   m_Layer: 0
   m_Name: a_12_low_alpha
   m_TagString: Untagged
@@ -132,3 +133,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   markerAlpha: 1
+--- !u!114 &3600878123539108880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6387016307566893731}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 209cd6cbbbf86c64fb87ae1c05a85ab6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  role: 0

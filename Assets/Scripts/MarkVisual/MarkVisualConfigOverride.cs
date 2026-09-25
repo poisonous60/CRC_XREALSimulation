@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -26,6 +27,16 @@ public sealed class MarkVisualConfigOverride : MonoBehaviour
         // Saved slider values have to land before the marker manager copies Marker Size Meters
         // in its own OnEnable, so this runs here rather than when the settings screen opens.
         RuntimeTunable.Restore(config);
+
+        IReadOnlyList<GameObject> looks = config.Looks;
+
+        for (int index = 0; index < looks.Count; index++)
+        {
+            GameObject look = looks[index];
+
+            if (look != null && look.TryGetComponent(out LookRole role) && role.Role == LookRoleKind.Standalone)
+                Instantiate(look);
+        }
     }
 
     private void OnDestroy()

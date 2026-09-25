@@ -92,31 +92,12 @@ public static class RuntimeTunable
 
         HashSet<ScriptableObject> visited = new HashSet<ScriptableObject>();
         CollectAsset(config, visited, results);
-        CollectPrefab(config.MarkerPrefab, visited, results);
-        CollectPrefab(config.OffscreenPrefab != null ? config.OffscreenPrefab.gameObject : null, visited, results);
 
-        IReadOnlyList<SourcePresentation> proximity = config.ProximityPrefabs;
-        if (proximity != null)
-        {
-            for (int index = 0; index < proximity.Count; index++)
-            {
-                SourcePresentation entry = proximity[index];
-                CollectPrefab(entry != null ? entry.gameObject : null, visited, results);
-            }
-        }
+        IReadOnlyList<GameObject> looks = config.Looks;
 
-        IReadOnlyList<UncertaintyPresentation> uncertainty = config.UncertaintyPrefabs;
+        for (int index = 0; index < looks.Count; index++)
+            CollectPrefab(looks[index], visited, results);
 
-        if (uncertainty != null)
-        {
-            for (int index = 0; index < uncertainty.Count; index++)
-            {
-                UncertaintyPresentation entry = uncertainty[index];
-                CollectPrefab(entry != null ? entry.gameObject : null, visited, results);
-            }
-        }
-
-        CollectPrefab(config.DetectorPrefab, visited, results);
         CollectSceneComponents(visited, results);
     }
 

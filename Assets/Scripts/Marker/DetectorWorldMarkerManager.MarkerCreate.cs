@@ -105,15 +105,18 @@ public partial class DetectorWorldMarkerManager
 
         MarkVisualConfig.TryLoad(out MarkVisualConfig visualSetting);
 
+        GameObject detectorLook = null;
         bool usesDetectorLook =
             visualSetting != null &&
-            visualSetting.DetectorPrefab != null &&
-            !IsSourceMarkerKey(detectorId);
+            !IsSourceMarkerKey(detectorId) &&
+            visualSetting.TryGetLook(LookRoleKind.DetectorMarker, out detectorLook);
 
         GameObject prefab = markerPrefab;
 
-        if (prefab == null && visualSetting != null)
-            prefab = usesDetectorLook ? visualSetting.DetectorPrefab : visualSetting.MarkerPrefab;
+        if (prefab == null && usesDetectorLook)
+            prefab = detectorLook;
+        else if (prefab == null && visualSetting != null && visualSetting.TryGetLook(LookRoleKind.SourceMarker, out GameObject sourceLook))
+            prefab = sourceLook;
 
         GameObject root = prefab != null
             ? Instantiate(prefab, worldPosition, Quaternion.identity, markerParent)
@@ -121,7 +124,7 @@ public partial class DetectorWorldMarkerManager
 
         root.name = $"DetectorMarker_{detectorId}";
 
-        if (visualSetting != null && visualSetting.HasProximityPrefab() && !usesDetectorLook)
+        if (visualSetting != null && visualSetting.TryGetLook(out SourcePresentation _) && !usesDetectorLook)
             root.AddComponent<SourcePresentationHost>();
 
         root.transform.position = worldPosition;
@@ -164,7 +167,7 @@ public partial class DetectorWorldMarkerManager
             return true;
 
         return MarkVisualConfig.TryLoad(out MarkVisualConfig visualSetting)
-            && visualSetting.MarkerPrefab != null;
+            && visualSetting.TryGetLook(LookRoleKind.SourceMarker, out _);
     }
 
     private GameObject CreateDefaultSphere(Vector3 position, Transform parent)
@@ -233,9 +236,10 @@ public partial class DetectorWorldMarkerManager
         GameObject prefab = null;
         float sizeMeters = fixedMarkerSize;
 
-        if (isPreview && MarkVisualConfig.TryLoad(out MarkVisualConfig visualSetting))
+        if (isPreview &&
+            MarkVisualConfig.TryLoad(out MarkVisualConfig visualSetting) &&
+            visualSetting.TryGetLook(LookRoleKind.PlacementPreview, out prefab))
         {
-            prefab = visualSetting.PlacementPrefab;
             sizeMeters = visualSetting.PlacementSizeMeters;
         }
 

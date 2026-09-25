@@ -296,9 +296,8 @@ public sealed class SourceLocateScene : MonoBehaviour
 
         uncertaintyColor = look.UncertaintyColor;
 
-        IReadOnlyList<UncertaintyPresentation> prefabs = look.UncertaintyPrefabs;
-        if (prefabs == null)
-            return;
+        List<UncertaintyPresentation> prefabs = new List<UncertaintyPresentation>();
+        look.GetLooks(prefabs);
 
         for (int index = 0; index < prefabs.Count; index++)
         {

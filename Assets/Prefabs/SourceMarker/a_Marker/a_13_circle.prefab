@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 745323093059749838}
   - component: {fileID: 7096439551655778722}
   - component: {fileID: 4881982094961304024}
+  - component: {fileID: 2368702483378229717}
   m_Layer: 0
   m_Name: a_13_circle
   m_TagString: Untagged
@@ -62,6 +63,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   markerAlpha: 0.5
+--- !u!114 &2368702483378229717
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 937448006854704604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 209cd6cbbbf86c64fb87ae1c05a85ab6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  role: 0
 --- !u!1 &5172412989080748007
 GameObject:
   m_ObjectHideFlags: 0

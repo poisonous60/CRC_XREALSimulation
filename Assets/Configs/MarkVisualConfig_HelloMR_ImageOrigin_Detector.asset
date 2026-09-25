@@ -12,9 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfd3f835e48bd1748a20c259102e8a4e, type: 3}
   m_Name: MarkVisualConfig_HelloMR_ImageOrigin_Detector
   m_EditorClassIdentifier: 
-  markerPrefab: {fileID: 937448006854704604, guid: aea92c1873858e441ae6470b9ed74d84, type: 3}
+  looks:
+  - {fileID: 937448006854704604, guid: aea92c1873858e441ae6470b9ed74d84, type: 3}
+  - {fileID: 2862705858975327497, guid: cb60e7bb1990700429e6a7729a1c917e, type: 3}
+  - {fileID: 4491689297154010792, guid: da70caf432a00364586c24ff937e03a5, type: 3}
+  - {fileID: 7252252752940102783, guid: 122dde21e47bb554399be3cf9bb401e0, type: 3}
+  - {fileID: 4660837989108377986, guid: 6e941a9ecc5f5c64aa2bc3ea5447f9e2, type: 3}
+  - {fileID: 2293806835651872287, guid: ebabb7a645604f2380ef30813b67d9b7, type: 3}
+  - {fileID: 5742530184883840491, guid: ad4e935f5876f6d439671e5e0ad89fe1, type: 3}
+  - {fileID: 2786245066922537009, guid: 2fda5b44dce95794b92b60515690df45, type: 3}
   markerSizeMeters: 0.4
-  placementPrefab: {fileID: 6387016307566893731, guid: f6d69e8b4d22668459be4f0909556c34, type: 3}
   placementSizeMeters: 0.03
   appearFadeSeconds: 0.2
   appearFadeCurve:
@@ -76,17 +83,10 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  offscreenPrefab: {fileID: 6002855538228716833, guid: da70caf432a00364586c24ff937e03a5, type: 3}
   offscreenEdgeInset: 1
   offscreenUseStatusColor: 1
   offscreenColor: {r: 1, g: 1, b: 1, a: 1}
-  proximityPrefabs:
-  - {fileID: 7865643288987669811, guid: 122dde21e47bb554399be3cf9bb401e0, type: 3}
-  - {fileID: 3586553982834294555, guid: 6e941a9ecc5f5c64aa2bc3ea5447f9e2, type: 3}
-  - {fileID: 4378110893968593232, guid: ebabb7a645604f2380ef30813b67d9b7, type: 3}
-  uncertaintyPrefabs: []
   uncertaintyColor: {r: 0.84, g: 0.16, b: 0.16, a: 0.18}
-  detectorPrefab: {fileID: 5742530184883840491, guid: ad4e935f5876f6d439671e5e0ad89fe1, type: 3}
   showFalloffShells: 0
   falloffReferenceDistanceMeters: 0.08
   falloffMaxRadiusMeters: 5

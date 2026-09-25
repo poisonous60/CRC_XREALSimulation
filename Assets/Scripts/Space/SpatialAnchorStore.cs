@@ -96,7 +96,6 @@ public sealed class SpatialAnchorStore
         if (!TryParseMapFileGuid(guid, out SerializableGuid mapFileGuid))
             return AnchorLoadResult.Failed(Warn($"Invalid anchor GUID: {guid}"));
 
-        float deadline = Time.realtimeSinceStartup + timeoutSeconds;
         Task<Result<ARAnchor>> load = AsTask(anchorManager.TryLoadAnchorAsync(mapFileGuid));
 
         if (!await WaitAsync(load, timeoutSeconds))
@@ -112,27 +111,10 @@ public sealed class SpatialAnchorStore
         if (!result.status.IsSuccess() || result.value == null)
             return AnchorLoadResult.Failed(Warn($"Load failed: {result.status.statusCode}"));
 
-        ARAnchor anchor = result.value;
-
-        // A loaded anchor comes back before the room is recognized. Parking it far away tells the
-        // pose the provider sets once it relocalizes apart from the provisional one.
-        anchor.transform.position = LoadedAnchorWaitingPosition;
-
-        while (anchor != null && !IsLocated(anchor))
-        {
-            if (Time.realtimeSinceStartup >= deadline)
-            {
-                UnityEngine.Object.Destroy(anchor.gameObject);
-                return AnchorLoadResult.Failed(Warn($"The room was not recognized within {timeoutSeconds:F0} s."));
-            }
-
-            await Awaitable.NextFrameAsync();
-        }
-
-        if (anchor == null)
-            return AnchorLoadResult.Failed(Warn("The loaded anchor was destroyed while waiting."));
-
-        return AnchorLoadResult.Loaded(anchor);
+        // A loaded anchor comes back before the room is recognized. Parked far away, whatever hangs on it
+        // stays out of sight until the provider moves it to the recognized pose, as in XREAL's sample.
+        result.value.transform.position = LoadedAnchorWaitingPosition;
+        return AnchorLoadResult.Loaded(result.value);
     }
 
     public async Awaitable<bool> EraseAsync(string guid)
@@ -178,12 +160,6 @@ public sealed class SpatialAnchorStore
         string fileName = BitConverter.ToString(savedGuid.ToByteArray()).Replace("-", "");
         mapFileGuid = new SerializableGuid(Guid.ParseExact(fileName, "N"));
         return true;
-    }
-
-    private static bool IsLocated(ARAnchor anchor)
-    {
-        return anchor.trackingState == TrackingState.Tracking &&
-               (anchor.transform.position - LoadedAnchorWaitingPosition).sqrMagnitude > 1f;
     }
 
     // A save that answers after its timeout still wrote a map file that no caller knows about.

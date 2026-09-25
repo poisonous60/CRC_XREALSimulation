@@ -17,7 +17,7 @@ public class StatusColorBand
 }
 
 /// <summary>
-/// Project-wide slots for the source marker's look, loaded from Resources by every scene.
+/// One scene's looks in a single list, plus the colors and sizes they share. Handed over by MarkVisualConfigOverride.
 /// </summary>
 [CreateAssetMenu(fileName = "MarkVisualConfig", menuName = "RadVis/Mark Visual Config")]
 public class MarkVisualConfig : ScriptableObject
@@ -26,18 +26,16 @@ public class MarkVisualConfig : ScriptableObject
 
     private static MarkVisualConfig sceneOverride;
 
-    [Header("(a) Marker")]
-    [Tooltip("Replaces the whole marker object. Empty keeps the built-in sphere and its transparent shader.")]
-    [SerializeField] private GameObject markerPrefab;
+    [Header("Looks")]
+    [Tooltip("Every look this scene uses, in one list. Each prefab says what it is itself: a LookRole on its root, or its own off-screen, proximity or uncertainty component. A new feature adds an entry here, never a new field.")]
+    [SerializeField] private List<GameObject> looks = new List<GameObject>();
 
+    [Header("(a) Marker")]
     [Tooltip("Multiplier on the 1 m every marker prefab is authored at, so 1 draws a 1 m marker and 0.5 a half metre one. Radiation changes color only, never size.")]
     [RuntimeTunable(0.02f, 2f, "Marker size")]
     [SerializeField, Min(MinimumMarkerSizeMeters)] private float markerSizeMeters = 0.2f;
 
-    [Tooltip("Look drawn instead of Marker Prefab while Add Source / Place is in progress. It keeps its own materials, so the CPS colors and the manager's Placement Preview Visual tint do not reach it. Empty keeps the tinted Marker Prefab.")]
-    [SerializeField] private GameObject placementPrefab;
-
-    [Tooltip("Same multiplier on the 1 m the Placement Prefab is authored at. Independent of Marker Size Meters, so the aiming look can be larger or smaller than the placed marker.")]
+    [Tooltip("Same multiplier on the 1 m the PlacementPreview look is authored at. Independent of Marker Size Meters, so the aiming look can be larger or smaller than the placed marker.")]
     [SerializeField, Min(MinimumMarkerSizeMeters)] private float placementSizeMeters = 0.2f;
 
     [Tooltip("Seconds the (a) marker takes to fade in from nothing when it appears. 0 shows it at full opacity at once.")]
@@ -66,9 +64,6 @@ public class MarkVisualConfig : ScriptableObject
     [SerializeField] private AnimationCurve statusColorFadeCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
 
     [Header("(b) Off-screen Cue")]
-    [Tooltip("Look of one off-screen indicator. Empty keeps the built-in arrow and detector id.")]
-    [SerializeField] private OffscreenIndicatorView offscreenPrefab;
-
     [Tooltip("How much of the cue's own size is held inside the screen edge. 1 keeps the whole cue inside, 0 lets it straddle the edge. Applies to the ellipse border only.")]
     [SerializeField, Range(0f, 1f)] private float offscreenEdgeInset = 1f;
 
@@ -78,20 +73,9 @@ public class MarkVisualConfig : ScriptableObject
     [Tooltip("Cue color used when Offscreen Use Status Color is off.")]
     [SerializeField] private Color offscreenColor = Color.white;
 
-    [Header("(c) Proximity Information")]
-    [Tooltip("Every look shown as the user approaches. All entries are spawned together. Empty draws nothing.")]
-    [SerializeField] private List<SourcePresentation> proximityPrefabs = new List<SourcePresentation>();
-
     [Header("(d) Uncertainty Footprint")]
-    [Tooltip("Every look shown for the estimator's uncertainty radius. All entries are spawned together. Empty draws nothing.")]
-    [SerializeField] private List<UncertaintyPresentation> uncertaintyPrefabs = new List<UncertaintyPresentation>();
-
     [Tooltip("Footprint color. Alpha decides how much of the surface stays readable through it.")]
     [SerializeField] private Color uncertaintyColor = new Color(0.84f, 0.16f, 0.16f, 0.18f);
-
-    [Header("(e) Detector")]
-    [Tooltip("Replaces the whole marker object for every marker that is not the Source. Empty draws those markers with the (a) Marker Prefab, as before.")]
-    [SerializeField] private GameObject detectorPrefab;
 
     [Header("Code-drawn Extras")]
     [Tooltip("Faint inverse-square shells around the marker. Drawn in code, so no prefab changes their look.")]
@@ -112,8 +96,6 @@ public class MarkVisualConfig : ScriptableObject
     [Tooltip("Detector name text beside the marker. Drawn in code, so no prefab changes its look.")]
     [SerializeField] private bool showLabel = false;
 
-    public GameObject MarkerPrefab => markerPrefab;
-    public GameObject PlacementPrefab => placementPrefab;
     public float PlacementSizeMeters => Mathf.Max(MinimumMarkerSizeMeters, placementSizeMeters);
     public float MarkerSizeMeters => Mathf.Max(MinimumMarkerSizeMeters, markerSizeMeters);
     public Color UnknownColor => unknownColor;
@@ -121,34 +103,57 @@ public class MarkVisualConfig : ScriptableObject
     public Color LowCpsColor => lowCpsColor;
     public float StatusColorFadeSeconds => Mathf.Max(0f, statusColorFadeSeconds);
     public float AppearFadeSeconds => Mathf.Max(0f, appearFadeSeconds);
-    public OffscreenIndicatorView OffscreenPrefab => offscreenPrefab;
     public float OffscreenEdgeInset => offscreenEdgeInset;
     public bool OffscreenUseStatusColor => offscreenUseStatusColor;
     public Color OffscreenColor => offscreenColor;
-    public IReadOnlyList<SourcePresentation> ProximityPrefabs => proximityPrefabs;
-    public IReadOnlyList<UncertaintyPresentation> UncertaintyPrefabs => uncertaintyPrefabs;
     public Color UncertaintyColor => uncertaintyColor;
-    public GameObject DetectorPrefab => detectorPrefab;
-
-    public bool HasProximityPrefab()
-    {
-        if (proximityPrefabs == null)
-            return false;
-
-        for (int index = 0; index < proximityPrefabs.Count; index++)
-        {
-            if (proximityPrefabs[index] != null)
-                return true;
-        }
-
-        return false;
-    }
+    public IReadOnlyList<GameObject> Looks => looks;
     public bool ShowFalloffShells => showFalloffShells;
     public float FalloffReferenceDistanceMeters => falloffReferenceDistanceMeters;
     public float FalloffMaxRadiusMeters => falloffMaxRadiusMeters;
     public float FalloffShellAlpha => falloffShellAlpha;
     public int MaxFalloffShells => maxFalloffShells;
     public bool ShowLabel => showLabel;
+
+    public bool TryGetLook(LookRoleKind role, out GameObject prefab)
+    {
+        for (int index = 0; index < looks.Count; index++)
+        {
+            GameObject entry = looks[index];
+
+            if (entry != null && entry.TryGetComponent(out LookRole lookRole) && lookRole.Role == role)
+            {
+                prefab = entry;
+                return true;
+            }
+        }
+
+        prefab = null;
+        return false;
+    }
+
+    public bool TryGetLook<T>(out T prefab) where T : Component
+    {
+        for (int index = 0; index < looks.Count; index++)
+        {
+            if (looks[index] != null && looks[index].TryGetComponent(out prefab))
+                return true;
+        }
+
+        prefab = null;
+        return false;
+    }
+
+    public void GetLooks<T>(List<T> results) where T : Component
+    {
+        results.Clear();
+
+        for (int index = 0; index < looks.Count; index++)
+        {
+            if (looks[index] != null && looks[index].TryGetComponent(out T look))
+                results.Add(look);
+        }
+    }
 
     // Statics survive entering play mode when Reload Domain is off, so drop the cache here.
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

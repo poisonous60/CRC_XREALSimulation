@@ -54,7 +54,7 @@ public sealed class AnchorTestScene : MonoBehaviour
     [Tooltip("Seconds the start-up restore waits for the anchor subsystem.")]
     [SerializeField, Min(0f)] private float subsystemReadyTimeoutSeconds = 8f;
 
-    [Tooltip("A restore that has not recognized the room after this many seconds is reported as failed. Applies to each saved anchor.")]
+    [Tooltip("A load that XREAL has not answered after this many seconds is reported as failed. Recognizing the room has no limit.")]
     [SerializeField, Min(1f)] private float restoreTimeoutSeconds = 30f;
 
     private readonly GazePlaneProbe gazeProbe = new GazePlaneProbe();
@@ -136,18 +136,18 @@ public sealed class AnchorTestScene : MonoBehaviour
         }
 
         int version = clearVersion;
+        SetAnchorStatus("Restoring...");
 
         float readyDeadline = Time.realtimeSinceStartup + subsystemReadyTimeoutSeconds;
         while (!store.IsReady && Time.realtimeSinceStartup < readyDeadline)
             await Awaitable.NextFrameAsync();
 
-        int restored = 0;
+        int loaded = 0;
         string failure = "";
 
         // One at a time, the way XREAL's own sample loads saved anchors.
         for (int i = 0; i < guids.Length; i++)
         {
-            SetAnchorStatus($"Restoring {i + 1} of {guids.Length}. Look around the room.");
             AnchorLoadResult result = await store.LoadAsync(guids[i], restoreTimeoutSeconds);
 
             if (version != clearVersion)
@@ -168,12 +168,12 @@ public sealed class AnchorTestScene : MonoBehaviour
             if (TryCreateDisc(out GameObject disc))
                 AttachDisc(disc, result.Anchor);
 
-            restored++;
+            loaded++;
         }
 
-        SetAnchorStatus(restored == guids.Length
-            ? "Restored."
-            : $"Restored {restored} of {guids.Length}. Last failure: {failure}");
+        SetAnchorStatus(loaded == guids.Length
+            ? "Loaded. Look around. Each disc appears once its spot is recognized."
+            : $"Loaded {loaded} of {guids.Length}. Last failure: {failure}");
     }
 
     private void HandlePlacePressed()
@@ -251,8 +251,11 @@ public sealed class AnchorTestScene : MonoBehaviour
 
     private void HandleClearClicked()
     {
+        // XREAL holds anchor removal until a running save ends, which froze the app for seconds.
+        if (saving)
+            return;
+
         clearVersion++;
-        saving = false;
 
         if (aimDisc != null)
             Destroy(aimDisc);
@@ -310,13 +313,13 @@ public sealed class AnchorTestScene : MonoBehaviour
     {
         disc = null;
 
-        if (markVisualConfig == null || markVisualConfig.MarkerPrefab == null)
+        if (markVisualConfig == null || !markVisualConfig.TryGetLook(LookRoleKind.SourceMarker, out GameObject sourceLook))
         {
-            Debug.LogWarning("[AnchorTestScene] Mark Visual Config or its Marker Prefab is missing. No disc to place.");
+            Debug.LogWarning("[AnchorTestScene] Mark Visual Config or its SourceMarker look is missing. No disc to place.");
             return false;
         }
 
-        disc = Instantiate(markVisualConfig.MarkerPrefab);
+        disc = Instantiate(sourceLook);
         disc.transform.localScale = Vector3.one * markVisualConfig.MarkerSizeMeters;
         return true;
     }
