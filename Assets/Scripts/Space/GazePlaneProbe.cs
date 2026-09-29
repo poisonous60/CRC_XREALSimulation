@@ -49,7 +49,8 @@ public class GazePlaneProbe
 
         foreach (ARPlane plane in planeManager.trackables)
         {
-            if (plane == null || !plane.gameObject.activeInHierarchy || plane.trackingState == TrackingState.None)
+            if (plane == null || !plane.gameObject.activeInHierarchy || plane.trackingState == TrackingState.None ||
+                plane.subsumedBy != null)
                 continue;
 
             Vector3 planeNormal = plane.transform.up;
@@ -94,7 +95,7 @@ public class GazePlaneProbe
         return true;
     }
 
-    private bool IsPointInsidePlaneBoundary(ARPlane plane, Vector3 worldPoint)
+    public static bool IsPointInsidePlaneBoundary(ARPlane plane, Vector3 worldPoint)
     {
         Vector3 localPoint3D = plane.transform.InverseTransformPoint(worldPoint);
         Vector2 localPoint = new Vector2(localPoint3D.x, localPoint3D.z);
@@ -130,8 +131,7 @@ public class GazePlaneProbe
         // Boundary data can be briefly unavailable on the first tracking frame.
         // Fall back to the plane's rectangular size until its polygon arrives.
         Vector2 halfSize = plane.size * 0.5f;
-        Vector3 planeCenter3D = plane.center;
-        Vector2 planeCenter = new Vector2(planeCenter3D.x, planeCenter3D.z);
+        Vector2 planeCenter = plane.centerInPlaneSpace;
         Vector2 pointFromCenter = localPoint - planeCenter;
         return Mathf.Abs(pointFromCenter.x) <= halfSize.x &&
                Mathf.Abs(pointFromCenter.y) <= halfSize.y;

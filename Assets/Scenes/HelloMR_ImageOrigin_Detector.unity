@@ -980,10 +980,12 @@ MonoBehaviour:
   trackedImageManager: {fileID: 0}
   roomCoordinateSystem: {fileID: 0}
   markerManager: {fileID: 0}
+  anchorManager: {fileID: 0}
   markerName: ROOM_ORIGIN
   realignIntervalSeconds: 0.5
   realignPositionThresholdMeters: 0.01
   realignRotationThresholdDegrees: 1
+  holdFrameWithAnchor: 1
 --- !u!114 &588933904
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1102,6 +1104,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   trackedImageManager: {fileID: 0}
+--- !u!114 &624047421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 624047408}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 314689f81becec945a0ae28de785ad5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  planeManager: {fileID: 624047417}
+  markerManager: {fileID: 588933899}
 --- !u!1001 &694392833
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1229,6 +1245,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7698955068414132531, guid: 3182b5074a6bf3d4887a44a38cbb9cb6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 624047420}
+    - targetCorrespondingSourceObject: {fileID: 7698955068414132531, guid: 3182b5074a6bf3d4887a44a38cbb9cb6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 624047421}
     - targetCorrespondingSourceObject: {fileID: 9011500862288746607, guid: 3182b5074a6bf3d4887a44a38cbb9cb6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 876944439}

@@ -21,6 +21,7 @@ MonoBehaviour:
   - {fileID: 2293806835651872287, guid: ebabb7a645604f2380ef30813b67d9b7, type: 3}
   - {fileID: 5742530184883840491, guid: ad4e935f5876f6d439671e5e0ad89fe1, type: 3}
   - {fileID: 2786245066922537009, guid: 2fda5b44dce95794b92b60515690df45, type: 3}
+  - {fileID: 2786245066922537009, guid: 903ebcee5a0ffbe42aa32946241d2534, type: 3}
   markerSizeMeters: 0.4
   placementSizeMeters: 0.03
   appearFadeSeconds: 0.2
