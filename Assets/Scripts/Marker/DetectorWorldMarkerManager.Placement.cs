@@ -51,14 +51,20 @@ public partial class DetectorWorldMarkerManager
 
     public bool TryBeginSourcePlacement(string detectorId, out string resultMessage)
     {
+        string placementName = DetectorIdsEqual(detectorId, sourceMarkerKey)
+            ? "the Source"
+            : NormalizeDetectorId(detectorId);
+
+        if (!GlassesOffGuard.IsWorn)
+        {
+            resultMessage = $"Put on the glasses to place {placementName}";
+            return false;
+        }
+
         AbortControllerDetectorInteraction(true);
 
         if (roomCoordinateSystem != null)
             roomCoordinateSystem.CancelPendingPlacementForDetectorScan();
-
-        string placementName = DetectorIdsEqual(detectorId, sourceMarkerKey)
-            ? "the Source"
-            : NormalizeDetectorId(detectorId);
 
         if (!IsRoomReadyForPlacement())
         {

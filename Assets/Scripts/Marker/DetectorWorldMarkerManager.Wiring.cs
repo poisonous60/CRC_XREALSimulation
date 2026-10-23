@@ -7,6 +7,7 @@ using UnityEngine.XR.ARSubsystems;
 
 public partial class DetectorWorldMarkerManager
 {
+    private PlaneDetectionMode? appliedPlaneDetectionMode;
 
     private void EnsurePlacementOrigin()
     {
@@ -37,7 +38,17 @@ public partial class DetectorWorldMarkerManager
         }
 
         warnedAboutMissingPlaneManager = false;
+
+        if (!GlassesOffGuard.IsWorn)
+            return;
+
+        // Placement calls this every frame, and each assignment reaches XREAL's native
+        // SetPlaneDetectionMode even when the mode is unchanged.
+        if (planeManager.enabled && appliedPlaneDetectionMode == planeDetectionMode)
+            return;
+
         planeManager.requestedDetectionMode = planeDetectionMode;
+        appliedPlaneDetectionMode = planeDetectionMode;
 
         if (!planeManager.enabled)
             planeManager.enabled = true;

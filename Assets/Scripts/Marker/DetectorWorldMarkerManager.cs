@@ -282,6 +282,8 @@ public partial class DetectorWorldMarkerManager : MonoBehaviour
 
     public bool HasActiveDetectorMove => activeDetectorMoveSession != null;
 
+    public PlaneDetectionMode DesiredPlaneDetectionMode => planeDetectionMode;
+
     public string SourceMarkerKey => sourceMarkerKey;
 
     public bool RequiresRoomCalibration =>
