@@ -303,11 +303,27 @@ public class RadiationReceiver : MonoBehaviour
         if (slashIndex >= 0)
             ip = ip.Substring(0, slashIndex);
 
-        int colonIndex = ip.IndexOf(':');
-        if (colonIndex >= 0)
-            ip = ip.Substring(0, colonIndex);
+        if (ip.StartsWith("["))
+        {
+            int closeIndex = ip.IndexOf(']');
+            ip = closeIndex > 1 ? ip.Substring(1, closeIndex - 1) : "";
+        }
+        else
+        {
+            // More than one colon is a bare IPv6 address, which has no room for a port.
+            int colonIndex = ip.IndexOf(':');
+            if (colonIndex >= 0 && colonIndex == ip.LastIndexOf(':'))
+                ip = ip.Substring(0, colonIndex);
+        }
 
-        return ip.Trim();
+        ip = ip.Trim();
+
+        // IPv6 has many spellings; the canonical one keeps a typed address comparable with a discovered one.
+        System.Net.IPAddress parsedAddress;
+        if (ip.IndexOf(':') >= 0 && System.Net.IPAddress.TryParse(ip, out parsedAddress))
+            return parsedAddress.ToString();
+
+        return ip;
     }
 
     private async void Connect(
@@ -326,7 +342,8 @@ public class RadiationReceiver : MonoBehaviour
         if (isAutomaticReconnect && (isConnecting || IsConnected))
             return;
 
-        string url = $"ws://{cleanIp}:{(activeServerPort > 0 ? activeServerPort : serverPort)}";
+        string urlHost = cleanIp.IndexOf(':') >= 0 ? $"[{cleanIp}]" : cleanIp;
+        string url = $"ws://{urlHost}:{(activeServerPort > 0 ? activeServerPort : serverPort)}";
         Debug.Log($"Trying connecting to URL: {url}");
 
         CancelScheduledAutomaticReconnect();

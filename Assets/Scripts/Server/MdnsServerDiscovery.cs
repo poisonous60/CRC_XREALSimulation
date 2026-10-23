@@ -12,11 +12,14 @@ using UnityEngine;
 public sealed class MdnsServerDiscovery
 {
     private const string MulticastAddress = "224.0.0.251";
+    private const string MulticastAddressV6 = "ff02::fb";
     private const int MulticastPort = 5353;
-    private const int ReceiveTimeoutMilliseconds = 700;
+    private const int Ipv4PreferenceMilliseconds = 700;
+    private const int ReceivePollMilliseconds = 20;
     private const int IdlePollMilliseconds = 150;
     private const int RecordTypeA = 1;
     private const int RecordTypePtr = 12;
+    private const int RecordTypeAaaa = 28;
     private const int RecordTypeSrv = 33;
 
     private readonly string serviceType;
@@ -67,7 +70,7 @@ public sealed class MdnsServerDiscovery
         workerThread = null;
 
         if (stoppingThread != null)
-            stoppingThread.Join(queryIntervalMilliseconds + ReceiveTimeoutMilliseconds);
+            stoppingThread.Join(queryIntervalMilliseconds + Ipv4PreferenceMilliseconds);
 
         ClearResult();
     }
@@ -94,6 +97,18 @@ public sealed class MdnsServerDiscovery
         }
     }
 
+    private void PublishResult(List<string> addresses, int port)
+    {
+        if (!isQuerying)
+            return;
+
+        lock (resultLock)
+        {
+            pendingAddresses = addresses;
+            pendingPort = port;
+        }
+    }
+
     private void QueryLoop()
     {
         byte[] query = BuildPointerQuery(serviceType);
@@ -107,57 +122,33 @@ public sealed class MdnsServerDiscovery
             }
 
             int elapsedMilliseconds = 0;
+            UdpClient ipv4Client = null;
+            UdpClient ipv6Client = null;
 
             try
             {
-                using (UdpClient client = new UdpClient(new IPEndPoint(IPAddress.Any, 0)))
-                {
-                    client.Client.ReceiveTimeout = ReceiveTimeoutMilliseconds;
-                    SendOnEveryAdapter(client, query);
+                // Android takes no IPv4 lease on a network that offers the DHCP IPv6-only option
+                // (an iPhone hotspot), so the query also goes out over IPv6.
+                Exception sendError = null;
+                ipv4Client = TrySendQuery(AddressFamily.InterNetwork, query, ref sendError);
+                ipv6Client = TrySendQuery(AddressFamily.InterNetworkV6, query, ref sendError);
 
-                    while (isAlive && isQuerying && elapsedMilliseconds < queryIntervalMilliseconds)
-                    {
-                        IPEndPoint sender = new IPEndPoint(IPAddress.Any, 0);
-                        byte[] response;
-
-                        elapsedMilliseconds += ReceiveTimeoutMilliseconds;
-
-                        try
-                        {
-                            response = client.Receive(ref sender);
-                        }
-                        catch (SocketException)
-                        {
-                            break;
-                        }
-
-                        List<string> addresses;
-                        int port;
-
-                        if (!TryParseResponse(response, out addresses, out port))
-                            continue;
-
-                        // The reply reached this socket, so its sender is the server adapter reachable from here.
-                        string senderAddress = sender.Address.ToString();
-                        addresses.Remove(senderAddress);
-                        addresses.Insert(0, senderAddress);
-
-                        if (!isQuerying)
-                            break;
-
-                        lock (resultLock)
-                        {
-                            pendingAddresses = addresses;
-                            pendingPort = port;
-                        }
-
-                        break;
-                    }
-                }
+                if (ipv4Client == null && ipv6Client == null)
+                    Debug.LogWarning($"[MdnsServerDiscovery] Query failed: {sendError?.Message}");
+                else
+                    WaitForReply(ipv4Client, ipv6Client, ref elapsedMilliseconds);
             }
             catch (Exception queryException)
             {
                 Debug.LogWarning($"[MdnsServerDiscovery] Query failed: {queryException.Message}");
+            }
+            finally
+            {
+                if (ipv4Client != null)
+                    ipv4Client.Close();
+
+                if (ipv6Client != null)
+                    ipv6Client.Close();
             }
 
             int remainingMilliseconds = queryIntervalMilliseconds - elapsedMilliseconds;
@@ -165,6 +156,172 @@ public sealed class MdnsServerDiscovery
             if (isAlive && isQuerying && remainingMilliseconds > 0)
                 Thread.Sleep(remainingMilliseconds);
         }
+    }
+
+    // IPv4 stays the first choice, so an IPv6 reply waits briefly for an IPv4 one still in flight.
+    private void WaitForReply(UdpClient ipv4Client, UdpClient ipv6Client, ref int elapsedMilliseconds)
+    {
+        List<string> ipv6ReplyAddresses = null;
+        int ipv6ReplyPort = 0;
+        int ipv6ReplyMilliseconds = 0;
+
+        while (isAlive && isQuerying && elapsedMilliseconds < queryIntervalMilliseconds)
+        {
+            List<string> addresses;
+            int port;
+
+            if (TryReceiveReply(ipv4Client, out addresses, out port))
+            {
+                PublishResult(addresses, port);
+                return;
+            }
+
+            if (ipv6ReplyAddresses == null && TryReceiveReply(ipv6Client, out addresses, out port))
+            {
+                ipv6ReplyAddresses = addresses;
+                ipv6ReplyPort = port;
+                ipv6ReplyMilliseconds = elapsedMilliseconds;
+            }
+
+            if (ipv6ReplyAddresses != null &&
+                elapsedMilliseconds - ipv6ReplyMilliseconds >= Ipv4PreferenceMilliseconds)
+            {
+                break;
+            }
+
+            Thread.Sleep(ReceivePollMilliseconds);
+            elapsedMilliseconds += ReceivePollMilliseconds;
+        }
+
+        if (ipv6ReplyAddresses != null)
+            PublishResult(ipv6ReplyAddresses, ipv6ReplyPort);
+    }
+
+    private static UdpClient TrySendQuery(AddressFamily family, byte[] query, ref Exception sendError)
+    {
+        UdpClient client = null;
+
+        try
+        {
+            if (family == AddressFamily.InterNetworkV6)
+            {
+                client = new UdpClient(new IPEndPoint(IPAddress.IPv6Any, 0));
+                SendOnEveryIPv6Adapter(client, query);
+            }
+            else
+            {
+                client = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
+                SendOnEveryAdapter(client, query);
+            }
+
+            return client;
+        }
+        catch (Exception exception)
+        {
+            sendError = exception;
+
+            if (client != null)
+                client.Close();
+
+            return null;
+        }
+    }
+
+    private static bool TryReceiveReply(UdpClient client, out List<string> addresses, out int port)
+    {
+        addresses = null;
+        port = 0;
+
+        if (client == null)
+            return false;
+
+        try
+        {
+            while (client.Available > 0)
+            {
+                IPEndPoint sender = new IPEndPoint(
+                    client.Client.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any,
+                    0);
+                byte[] response = client.Receive(ref sender);
+
+                if (!TryParseResponse(response, out addresses, out port) ||
+                    !TryMoveReachableAddressFirst(addresses, sender.Address))
+                {
+                    continue;
+                }
+
+                return true;
+            }
+        }
+        catch (SocketException)
+        {
+            // Windows surfaces an earlier ICMP port-unreachable as a reset on the next receive.
+        }
+
+        addresses = null;
+        port = 0;
+        return false;
+    }
+
+    // The reply reached this socket, so its sender is the server adapter reachable from here.
+    // An IPv6 sender is link-local, whose zone index a ws:// URL cannot carry, so the advertised
+    // address on one of this device's own /64 prefixes stands in for it. Without one the IPv6
+    // reply is dropped: on an IPv6-only network its A records point nowhere.
+    private static bool TryMoveReachableAddressFirst(List<string> addresses, IPAddress sender)
+    {
+        string reachableAddress;
+
+        if (sender.AddressFamily == AddressFamily.InterNetworkV6)
+        {
+            reachableAddress = sender.IsIPv6LinkLocal
+                ? FindAddressOnLocalPrefix(addresses)
+                : new IPAddress(sender.GetAddressBytes()).ToString();
+        }
+        else
+        {
+            reachableAddress = sender.ToString();
+        }
+
+        if (reachableAddress == null)
+            return false;
+
+        addresses.Remove(reachableAddress);
+        addresses.Insert(0, reachableAddress);
+        return true;
+    }
+
+    private static string FindAddressOnLocalPrefix(List<string> addresses)
+    {
+        List<IPAddress> localAddresses = GetLocalGlobalIPv6Addresses();
+
+        foreach (string candidate in addresses)
+        {
+            IPAddress parsed;
+
+            if (!IPAddress.TryParse(candidate, out parsed) || parsed.AddressFamily != AddressFamily.InterNetworkV6)
+                continue;
+
+            byte[] candidateBytes = parsed.GetAddressBytes();
+
+            foreach (IPAddress localAddress in localAddresses)
+            {
+                if (SharesPrefix64(candidateBytes, localAddress.GetAddressBytes()))
+                    return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool SharesPrefix64(byte[] first, byte[] second)
+    {
+        for (int index = 0; index < 8; index++)
+        {
+            if (first[index] != second[index])
+                return false;
+        }
+
+        return true;
     }
 
     // Windows sends multicast out one adapter, the one whose 224.0.0.0/4 route has the lowest
@@ -194,9 +351,122 @@ public sealed class MdnsServerDiscovery
             client.Send(query, query.Length, MulticastAddress, MulticastPort);
     }
 
+    // ff02::fb is link-scoped, so each send names its adapter by the scope of that adapter's link-local address.
+    private static void SendOnEveryIPv6Adapter(UdpClient client, byte[] query)
+    {
+        byte[] groupBytes = IPAddress.Parse(MulticastAddressV6).GetAddressBytes();
+        bool sentAny = false;
+
+        foreach (long scopeId in GetLocalIPv6Scopes())
+        {
+            try
+            {
+                client.Client.SetSocketOption(
+                    SocketOptionLevel.IPv6,
+                    SocketOptionName.MulticastInterface,
+                    (int)scopeId);
+                client.Send(query, query.Length, new IPEndPoint(new IPAddress(groupBytes, scopeId), MulticastPort));
+                sentAny = true;
+            }
+            catch (SocketException)
+            {
+            }
+        }
+
+        if (!sentAny)
+            client.Send(query, query.Length, new IPEndPoint(new IPAddress(groupBytes), MulticastPort));
+    }
+
     private static List<IPAddress> GetLocalIPv4Addresses()
     {
         List<IPAddress> addresses = new List<IPAddress>();
+
+        foreach (NetworkInterface adapter in GetMulticastAdapters())
+        {
+            foreach (UnicastIPAddressInformation unicast in adapter.GetIPProperties().UnicastAddresses)
+            {
+                if (unicast.Address.AddressFamily == AddressFamily.InterNetwork)
+                    addresses.Add(unicast.Address);
+            }
+        }
+
+        return addresses;
+    }
+
+    private static List<long> GetLocalIPv6Scopes()
+    {
+        List<long> scopes = new List<long>();
+
+        foreach (NetworkInterface adapter in GetMulticastAdapters())
+        {
+            long scopeId = 0;
+
+            foreach (UnicastIPAddressInformation unicast in adapter.GetIPProperties().UnicastAddresses)
+            {
+                IPAddress address = unicast.Address;
+
+                if (address.AddressFamily == AddressFamily.InterNetworkV6 &&
+                    address.IsIPv6LinkLocal &&
+                    address.ScopeId > 0)
+                {
+                    scopeId = address.ScopeId;
+                    break;
+                }
+            }
+
+            if (scopeId == 0)
+                scopeId = GetIPv6InterfaceIndex(adapter);
+
+            if (scopeId > 0 && !scopes.Contains(scopeId))
+                scopes.Add(scopeId);
+        }
+
+        return scopes;
+    }
+
+    // Second source for the interface index, for platforms that leave ScopeId unset on enumerated addresses.
+    private static long GetIPv6InterfaceIndex(NetworkInterface adapter)
+    {
+        try
+        {
+            if (!adapter.Supports(NetworkInterfaceComponent.IPv6))
+                return 0;
+
+            IPv6InterfaceProperties properties = adapter.GetIPProperties().GetIPv6Properties();
+            return properties != null ? properties.Index : 0;
+        }
+        catch (Exception)
+        {
+            return 0;
+        }
+    }
+
+    private static List<IPAddress> GetLocalGlobalIPv6Addresses()
+    {
+        List<IPAddress> addresses = new List<IPAddress>();
+
+        foreach (NetworkInterface adapter in GetMulticastAdapters())
+        {
+            foreach (UnicastIPAddressInformation unicast in adapter.GetIPProperties().UnicastAddresses)
+            {
+                IPAddress address = unicast.Address;
+
+                if (address.AddressFamily == AddressFamily.InterNetworkV6 &&
+                    !address.IsIPv6LinkLocal &&
+                    !address.IsIPv6Multicast &&
+                    !IPAddress.IsLoopback(address))
+                {
+                    addresses.Add(address);
+                }
+            }
+        }
+
+        return addresses;
+    }
+
+    private static List<NetworkInterface> GetMulticastAdapters()
+    {
+        List<NetworkInterface> adapters = new List<NetworkInterface>();
 
         foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
         {
@@ -207,14 +477,10 @@ public sealed class MdnsServerDiscovery
                 continue;
             }
 
-            foreach (UnicastIPAddressInformation unicast in adapter.GetIPProperties().UnicastAddresses)
-            {
-                if (unicast.Address.AddressFamily == AddressFamily.InterNetwork)
-                    addresses.Add(unicast.Address);
-            }
+            adapters.Add(adapter);
         }
 
-        return addresses;
+        return adapters;
     }
 
     private static byte[] BuildPointerQuery(string name)
@@ -256,6 +522,7 @@ public sealed class MdnsServerDiscovery
         if (data == null || data.Length < 12)
             return false;
 
+        List<string> ipv6Addresses = new List<string>();
         int questionCount = ReadUInt16(data, 4);
         int recordCount = ReadUInt16(data, 6) + ReadUInt16(data, 8) + ReadUInt16(data, 10);
         int offset = 12;
@@ -281,13 +548,27 @@ public sealed class MdnsServerDiscovery
                 break;
 
             if (recordType == RecordTypeA && dataLength == 4)
+            {
                 addresses.Add($"{data[offset]}.{data[offset + 1]}.{data[offset + 2]}.{data[offset + 3]}");
+            }
+            else if (recordType == RecordTypeAaaa && dataLength == 16)
+            {
+                byte[] addressBytes = new byte[16];
+                Array.Copy(data, offset, addressBytes, 0, 16);
+                IPAddress address = new IPAddress(addressBytes);
+
+                if (!address.IsIPv6LinkLocal && !address.IsIPv6Multicast)
+                    ipv6Addresses.Add(address.ToString());
+            }
             else if (recordType == RecordTypeSrv && dataLength >= 6 && port == 0)
+            {
                 port = ReadUInt16(data, offset + 4);
+            }
 
             offset += dataLength;
         }
 
+        addresses.AddRange(ipv6Addresses);
         return addresses.Count > 0 && port > 0;
     }
 
