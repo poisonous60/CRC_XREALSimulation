@@ -11,8 +11,8 @@ public class DetectorPeakConfig : ScriptableObject
     [RuntimeTunable(0f, 20f, "Threshold (cps)")]
     [SerializeField, Min(0f)] private float thresholdCps = 3f;
 
-    [Tooltip("Seconds of server-second readings averaged per detector before the strongest one is picked.")]
-    [SerializeField, Min(1)] private int windowSeconds = 3;
+    [Tooltip("Seconds of server-second readings averaged per detector before the strongest one is picked. 0 uses each detector's latest reading as it arrives, with no averaging.")]
+    [SerializeField, Min(0)] private int windowSeconds = 3;
 
     [Tooltip("Age above which a detector's last reading stops counting as reporting. Same 5 s rule the marker manager uses for its snapshot.")]
     [SerializeField, Min(0.5f)] private float freshnessSeconds = 5f;
@@ -26,7 +26,7 @@ public class DetectorPeakConfig : ScriptableObject
 
     public bool ShowAllAboveThreshold => showAllAboveThreshold;
     public float ThresholdCps => Mathf.Max(0f, thresholdCps);
-    public int WindowSeconds => Mathf.Max(1, windowSeconds);
+    public int WindowSeconds => Mathf.Max(0, windowSeconds);
     public float FreshnessSeconds => Mathf.Max(0.5f, freshnessSeconds);
     public float SwitchMarginRatio => Mathf.Max(0f, switchMarginRatio);
 }

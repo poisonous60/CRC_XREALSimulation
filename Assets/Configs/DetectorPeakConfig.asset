@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: DetectorPeakConfig
   m_EditorClassIdentifier: 
   thresholdCps: 3
-  windowSeconds: 3
+  windowSeconds: 0
   freshnessSeconds: 5
   switchMarginRatio: 0
+  showAllAboveThreshold: 0

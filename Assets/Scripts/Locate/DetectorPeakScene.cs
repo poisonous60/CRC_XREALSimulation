@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
 
-/// <summary>Averages each detector's readings, then draws the source disc at the strongest one, or at every one above the threshold.</summary>
+/// <summary>Averages each detector's readings, or takes its latest one, then draws the source disc at the strongest one, or at every one above the threshold.</summary>
 [DisallowMultipleComponent]
 public sealed class DetectorPeakScene : MonoBehaviour
 {
@@ -37,6 +37,8 @@ public sealed class DetectorPeakScene : MonoBehaviour
 
     private readonly List<WindowSlot> slots = new List<WindowSlot>();
     private readonly Dictionary<string, float> lastReadingTime =
+        new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, float> latestValues =
         new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, float> windowSums =
         new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
@@ -186,6 +188,7 @@ public sealed class DetectorPeakScene : MonoBehaviour
             }
 
             slot.values[detectorId] = pair.Value;
+            latestValues[detectorId] = pair.Value;
             lastReadingTime[detectorId] = now;
         }
 
@@ -198,6 +201,19 @@ public sealed class DetectorPeakScene : MonoBehaviour
         windowSums.Clear();
         windowCounts.Clear();
         windowMeans.Clear();
+
+        float now = Time.unscaledTime;
+
+        if (config.WindowSeconds == 0)
+        {
+            foreach (KeyValuePair<string, float> pair in latestValues)
+            {
+                if (IsFresh(pair.Key, now))
+                    windowMeans[pair.Key] = pair.Value;
+            }
+
+            return;
+        }
 
         // The newest slot is still being filled, so it is left out of the mean.
         int countedSlots = slots.Count - 1;
@@ -216,18 +232,19 @@ public sealed class DetectorPeakScene : MonoBehaviour
             }
         }
 
-        float now = Time.unscaledTime;
-
         foreach (KeyValuePair<string, float> pair in windowSums)
         {
-            if (!lastReadingTime.TryGetValue(pair.Key, out float readingTime) ||
-                now - readingTime > config.FreshnessSeconds)
-            {
+            if (!IsFresh(pair.Key, now))
                 continue;
-            }
 
             windowMeans[pair.Key] = pair.Value / Mathf.Max(1, windowCounts[pair.Key]);
         }
+    }
+
+    private bool IsFresh(string detectorId, float now)
+    {
+        return lastReadingTime.TryGetValue(detectorId, out float readingTime) &&
+               now - readingTime <= config.FreshnessSeconds;
     }
 
     private void PickWinner()
@@ -352,6 +369,7 @@ public sealed class DetectorPeakScene : MonoBehaviour
     {
         slots.Clear();
         lastReadingTime.Clear();
+        latestValues.Clear();
         windowMeans.Clear();
         winnerDetectorId = "";
         winnerMeanCps = -1f;
