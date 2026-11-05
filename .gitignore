@@ -13,6 +13,12 @@ Assets/ShaderHistory/
 /Assets/PersonalTests/
 /Assets/PersonalTests.meta
 
+# Gaussian splat test assets and scene
+/Assets/GaussianSplats/
+/Assets/GaussianSplats.meta
+/Assets/Scenes/GaussianSplatTest.unity
+/Assets/Scenes/GaussianSplatTest.unity.meta
+
 # Visual Studio / Rider / VSCode
 .vs/
 .idea/

@@ -15,7 +15,7 @@
     },
     "com.unity.burst": {
       "version": "1.8.28",
-      "depth": 2,
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.mathematics": "1.2.1",
@@ -32,7 +32,7 @@
     },
     "com.unity.collections": {
       "version": "2.6.5",
-      "depth": 2,
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.burst": "1.8.27",
@@ -113,7 +113,7 @@
     },
     "com.unity.nuget.mono-cecil": {
       "version": "1.11.6",
-      "depth": 3,
+      "depth": 2,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
@@ -210,7 +210,7 @@
     },
     "com.unity.test-framework.performance": {
       "version": "3.3.0",
-      "depth": 3,
+      "depth": 2,
       "source": "registry",
       "dependencies": {
         "com.unity.test-framework": "1.1.33",
@@ -354,6 +354,17 @@
         "com.unity.nuget.newtonsoft-json": "3.2.1"
       },
       "hash": "07c62fd29f1e6d29d8f9a504b968bedbbd47ddc8"
+    },
+    "org.nesnausk.gaussian-splatting": {
+      "version": "https://github.com/aras-p/UnityGaussianSplatting.git?path=/package#2c6fed37da67a217367261fcfcd3316d34c73e76",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.burst": "1.8.8",
+        "com.unity.collections": "2.1.4",
+        "com.unity.mathematics": "1.2.6"
+      },
+      "hash": "2c6fed37da67a217367261fcfcd3316d34c73e76"
     },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
