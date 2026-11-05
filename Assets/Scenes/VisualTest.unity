@@ -630,6 +630,53 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 398649555}
   m_CullTransparentMesh: 1
+--- !u!1 &500192727
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 500192729}
+  - component: {fileID: 500192728}
+  m_Layer: 0
+  m_Name: CpsSliderProbe
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &500192728
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 500192727}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6e0a7746ee127c4cb069b0e6477c7f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  markerManager: {fileID: 1228710700}
+  sourcePosition: {x: 0, y: 0, z: 3}
+  cps: 5
+--- !u!4 &500192729
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 500192727}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &538775373
 GameObject:
   m_ObjectHideFlags: 0
@@ -977,6 +1024,7 @@ MonoBehaviour:
   fallbackCamera: {fileID: 1533167467}
   markerPrefab: {fileID: 0}
   sourceMarkerKey: SOURCE
+  usePerDetectorRadiationValues: 1
   usePlaneIntersectionPlacement: 0
   planeManager: {fileID: 0}
   planeDetectionMode: 3
@@ -987,6 +1035,7 @@ MonoBehaviour:
   useCoordinateDatabase: 1
   coordinateDatabase: {fileID: 0}
   loadSavedCoordinatesOnStart: 1
+  removeRecordsOutsideSourceKey: 1
   enableRoomCoordinateSystem: 1
   roomCoordinateSystem: {fileID: 0}
   requireRoomCalibrationBeforeDetectorPlacement: 0
@@ -1025,6 +1074,7 @@ MonoBehaviour:
   forceDedicatedTransparentShader: 1
   enableArGlassesHud: 1
   arGlassesHud: {fileID: 0}
+  offscreenCueForSourceOnly: 0
   showLabel: 0
   showDistanceInLabel: 1
   showAnchorStateInLabel: 1
@@ -1072,7 +1122,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e5e954343cde43bae18d5bb02e635, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  config: {fileID: 11400000, guid: b11206d3cedbf5b4082b0f86d5e84e79, type: 2}
+  config: {fileID: 11400000, guid: fa3fe2b8e2322fd4aa3fd0d13913e129, type: 2}
 --- !u!1 &1373329184
 GameObject:
   m_ObjectHideFlags: 0
@@ -1657,3 +1707,4 @@ SceneRoots:
   - {fileID: 220666444}
   - {fileID: 1373612473}
   - {fileID: 1006621711}
+  - {fileID: 500192729}
